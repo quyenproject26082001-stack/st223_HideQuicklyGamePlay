@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvFontName"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:layout_margin="4dp"
+    android:background="@drawable/bg_font_item_unselected"
+    android:gravity="center"
+    android:text="Aa"
+    android:layout_gravity="center"
+    android:textColor="@android:color/white"
+    android:textSize="12sp" />

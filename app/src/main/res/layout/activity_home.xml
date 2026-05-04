@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity_app.main.MainActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/img_bg_app" />
+
+    <!--    layoutActionBar-->
+    <FrameLayout
+        android:id="@+id/layoutActionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <include
+            android:id="@+id/actionBar"
+            layout="@layout/layout_actionbar" />
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/titleHome"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:src="@drawable/img_app_name"
+        android:layout_marginTop="-50dp"
+        android:layout_marginHorizontal="7dp"
+        app:layout_constraintDimensionRatio="343:254"
+        app:layout_constraintTop_toBottomOf="@id/layoutActionBar" />
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="0dp"
+        android:scrollbars="none"
+        android:paddingBottom="5dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/titleHome">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="30dp"
+            android:paddingHorizontal="16dp">
+
+            <!--btnSingle-->
+            <FrameLayout
+                android:id="@+id/btnSingle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginHorizontal="10dp"
+
+                app:layout_constraintDimensionRatio="300:100"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/img_home_0" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+
+
+                    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                        android:id="@+id/tv0"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginHorizontal="40dp"
+                        android:fontFamily="@font/joan_regular"
+                        android:gravity="center"
+                        style="@style/single_marquee"
+                        android:layout_gravity="center"
+                        android:text="@string/single_player"
+                        android:textColor="@color/white"
+                        android:textSize="28sp"
+                        app:outerStrokeColor="#000000"
+                        app:outerStrokeWidth="2dp" />
+
+
+
+
+
+                </FrameLayout>
+            </FrameLayout>
+
+            <!--btnMulti-->
+            <FrameLayout
+                android:id="@+id/btnMulti"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="10dp"
+
+                app:layout_constraintDimensionRatio="300:100"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btnSingle">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/img_home_0" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                        android:id="@+id/tv1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:fontFamily="@font/joan_regular"
+                        android:gravity="center"
+                        android:text="@string/multi_player"
+                        android:textColor="@color/white"
+                        android:textSize="28sp"
+                        app:outerStrokeColor="#000000"
+                        app:outerStrokeWidth="2dp" />
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!--BtnPosterWantedTemplate-->
+
+            <!--btnMydesgin-->
+
+
+            <androidx.constraintlayout.widget.Guideline android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.5"
+                android:id="@+id/glCenter"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+    <!--quyen-->
+    <!-- nativeClHome -->
+    <FrameLayout
+        android:id="@+id/nativeClHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+    </FrameLayout>
+
+    <!--quyen-->
+</androidx.constraintlayout.widget.ConstraintLayout>
