@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Collision Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a2e; color: #eee; font-family: monospace; display: flex; height: 100vh; overflow: hidden; }
+
+  #sidebar {
+    width: 260px; min-width: 260px; background: #16213e; padding: 12px;
+    display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+  }
+  #sidebar h2 { color: #e94560; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .section { background: #0f3460; border-radius: 6px; padding: 10px; }
+  .section label { font-size: 12px; color: #aaa; display: block; margin-bottom: 4px; }
+
+  button {
+    width: 100%; padding: 7px; border: none; border-radius: 4px;
+    cursor: pointer; font-size: 12px; font-weight: bold; transition: opacity .2s;
+  }
+  button:hover { opacity: 0.85; }
+  button.active { outline: 2px solid #e94560; }
+
+  .btn-draw   { background: #e94560; color: #fff; }
+  .btn-select { background: #533483; color: #fff; }
+  .btn-delete { background: #c0392b; color: #fff; }
+  .btn-clear  { background: #555; color: #fff; }
+  .btn-export { background: #27ae60; color: #fff; }
+  .btn-load   { background: #2980b9; color: #fff; }
+  .btn-undo   { background: #777; color: #fff; }
+
+  #lineList { max-height: 200px; overflow-y: auto; font-size: 11px; }
+  .line-item {
+    padding: 4px 6px; margin: 2px 0; background: #1a1a2e;
+    border-radius: 3px; cursor: pointer; display: flex; justify-content: space-between;
+    border-left: 3px solid #533483;
+  }
+  .line-item.selected { border-left-color: #e94560; background: #2a1a2e; }
+  .line-item:hover { background: #2a2a4e; }
+  .line-item span { color: #aaa; }
+
+  #canvas-container {
+    flex: 1; overflow: auto; background: #111; display: flex;
+    align-items: flex-start; justify-content: flex-start; position: relative;
+  }
+  #mainCanvas { cursor: crosshair; display: block; }
+  #mainCanvas.select-mode { cursor: default; }
+
+  #coords { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7);
+    padding: 5px 10px; border-radius: 4px; font-size: 12px; pointer-events: none; }
+
+  input[type=range] { width: 100%; }
+  input[type=color] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
+  input[type=number] { width: 100%; padding: 4px; background: #1a1a2e; border: 1px solid #333;
+    border-radius: 4px; color: #eee; font-size: 12px; }
+
+  #xmlOutput { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 80%; max-height: 80vh; background: #111; border: 1px solid #e94560;
+    border-radius: 8px; z-index: 100; padding: 16px; overflow-y: auto; }
+  #xmlOutput textarea { width: 100%; height: 300px; background: #1a1a2e; color: #0f0;
+    border: none; font-family: monospace; font-size: 12px; padding: 8px; border-radius: 4px; }
+  #xmlOutput button { margin-top: 8px; }
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+  .snap-indicator { font-size: 11px; color: #e94560; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Collision Editor</h2>
+
+  <div class="section">
+    <label>Map Image</label>
+    <input type="file" id="imgInput" accept="image/*" style="font-size:11px;color:#aaa;width:100%">
+    <div style="margin-top:6px">
+      <label>Opacity nền</label>
+      <input type="range" id="bgOpacity" min="0" max="100" value="70">
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Viewport (Android)</label>
+    <div style="display:flex;gap:4px">
+      <input type="number" id="vpW" value="1997" placeholder="Width">
+      <input type="number" id="vpH" value="3258" placeholder="Height">
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Công cụ</label>
+    <button class="btn-draw active" id="btnDraw" onclick="setMode('draw')">✏️ Vẽ đường</button>
+    <div style="margin-top:4px"></div>
+    <button class="btn-select" id="btnSelect" onclick="setMode('select')">↖ Chọn / Di chuyển</button>
+  </div>
+
+  <div class="section">
+    <label>Màu collision</label>
+    <input type="color" id="strokeColor" value="#ff0000">
+    <div style="margin-top:6px">
+      <label>Stroke width (dp): <span id="swVal">20</span></label>
+      <input type="range" id="strokeWidth" min="1" max="60" value="20"
+        oninput="document.getElementById('swVal').textContent=this.value">
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Snap to grid</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="snapCheck"> <span style="font-size:12px">Bật snap</span>
+    </div>
+    <input type="number" id="snapSize" value="10" placeholder="Grid size" style="margin-top:4px">
+  </div>
+
+  <div class="section">
+    <label>Danh sách đường (<span id="lineCount">0</span>)</label>
+    <div id="lineList"></div>
+    <div style="margin-top:6px;display:flex;gap:4px">
+      <button class="btn-delete" onclick="deleteSelected()" style="flex:1">🗑 Xóa</button>
+      <button class="btn-undo" onclick="undo()" style="flex:1">↩ Undo</button>
+    </div>
+    <button class="btn-clear" onclick="clearAll()" style="margin-top:4px">🗑 Xóa tất cả</button>
+  </div>
+
+  <div class="section">
+    <label>Load từ XML</label>
+    <button class="btn-load" onclick="loadXML()">📂 Load map1.xml</button>
+    <textarea id="xmlInput" placeholder="Paste XML vào đây..." style="width:100%;height:80px;margin-top:6px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#eee;font-size:11px;padding:4px"></textarea>
+    <button class="btn-load" onclick="parseXMLInput()" style="margin-top:4px">Parse XML</button>
+  </div>
+
+  <button class="btn-export" onclick="exportXML()">💾 Export Android XML</button>
+</div>
+
+<div id="canvas-container">
+  <canvas id="mainCanvas"></canvas>
+</div>
+
+<div id="coords">x: 0, y: 0</div>
+
+<div id="overlay" onclick="closeXML()"></div>
+<div id="xmlOutput">
+  <h3 style="color:#e94560;margin-bottom:8px">Android Vector Drawable XML</h3>
+  <textarea id="xmlText" readonly></textarea>
+  <div style="display:flex;gap:8px">
+    <button class="btn-export" onclick="copyXML()">📋 Copy</button>
+    <button class="btn-clear" onclick="closeXML()">✕ Đóng</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+let vpW = 1997, vpH = 3258;
+let scale = 1;
+let bgImg = null;
+let bgOpacity = 0.7;
+let lines = [];       // {x1,y1,x2,y2,color,width}
+let selectedIdx = -1;
+let mode = 'draw';    // 'draw' | 'select'
+let drawing = false;
+let startX, startY, curX, curY;
+let dragOffX, dragOffY, dragLine = null;
+let history = [];     // for undo
+
+// Init canvas size
+function initCanvas() {
+  vpW = parseInt(document.getElementById('vpW').value) || 1997;
+  vpH = parseInt(document.getElementById('vpH').value) || 3258;
+  const container = document.getElementById('canvas-container');
+  const maxH = container.clientHeight - 20;
+  scale = Math.min((container.clientWidth - 20) / vpW, maxH / vpH);
+  canvas.width  = Math.round(vpW * scale);
+  canvas.height = Math.round(vpH * scale);
+  render();
+}
+
+document.getElementById('vpW').addEventListener('change', initCanvas);
+document.getElementById('vpH').addEventListener('change', initCanvas);
+window.addEventListener('resize', initCanvas);
+
+document.getElementById('imgInput').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  bgImg = new Image();
+  bgImg.onload = render;
+  bgImg.src = url;
+});
+
+document.getElementById('bgOpacity').addEventListener('input', e => {
+  bgOpacity = e.target.value / 100; render();
+});
+
+function setMode(m) {
+  mode = m;
+  canvas.className = m === 'select' ? 'select-mode' : '';
+  document.getElementById('btnDraw').classList.toggle('active', m === 'draw');
+  document.getElementById('btnSelect').classList.toggle('active', m === 'select');
+}
+
+function snap(v) {
+  if (!document.getElementById('snapCheck').checked) return v;
+  const g = parseInt(document.getElementById('snapSize').value) || 10;
+  return Math.round(v / g) * g;
+}
+
+function toVP(cx, cy) {
+  return { x: snap(cx / scale), y: snap(cy / scale) };
+}
+
+function toCanvas(vx, vy) {
+  return { x: vx * scale, y: vy * scale };
+}
+
+function hitTest(vx, vy) {
+  const thresh = 10 / scale;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const l = lines[i];
+    const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) continue;
+    const t = ((vx - l.x1) * dx + (vy - l.y1) * dy) / (len * len);
+    const tc = Math.max(0, Math.min(1, t));
+    const px = l.x1 + tc * dx - vx, py = l.y1 + tc * dy - vy;
+    if (Math.hypot(px, py) < thresh) return i;
+  }
+  return -1;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const vp = toVP(cx, cy);
+
+  if (mode === 'draw') {
+    drawing = true;
+    startX = vp.x; startY = vp.y;
+    curX = vp.x; curY = vp.y;
+  } else {
+    const idx = hitTest(vp.x, vp.y);
+    selectedIdx = idx;
+    if (idx >= 0) {
+      dragLine = { ...lines[idx] };
+      dragOffX = vp.x; dragOffY = vp.y;
+    }
+    updateList();
+    render();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const vp = toVP(cx, cy);
+  document.getElementById('coords').textContent = `x: ${Math.round(vp.x)}, y: ${Math.round(vp.y)}`;
+
+  if (mode === 'draw' && drawing) {
+    curX = vp.x; curY = vp.y; render();
+  } else if (mode === 'select' && dragLine && e.buttons === 1) {
+    const dx = vp.x - dragOffX, dy = vp.y - dragOffY;
+    lines[selectedIdx] = {
+      ...lines[selectedIdx],
+      x1: dragLine.x1 + dx, y1: dragLine.y1 + dy,
+      x2: dragLine.x2 + dx, y2: dragLine.y2 + dy
+    };
+    render();
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const vp = toVP(cx, cy);
+
+  if (mode === 'draw' && drawing) {
+    drawing = false;
+    const dx = Math.abs(vp.x - startX), dy = Math.abs(vp.y - startY);
+    if (dx > 2 || dy > 2) {
+      pushHistory();
+      lines.push({
+        x1: startX, y1: startY, x2: vp.x, y2: vp.y,
+        color: document.getElementById('strokeColor').value,
+        width: parseInt(document.getElementById('strokeWidth').value)
+      });
+      updateList();
+    }
+    render();
+  } else if (mode === 'select') {
+    dragLine = null;
+    updateList();
+  }
+});
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  if (bgImg) {
+    ctx.globalAlpha = bgOpacity;
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#555';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('← Upload ảnh map', canvas.width / 2, canvas.height / 2);
+  }
+
+  // Grid hint
+  if (document.getElementById('snapCheck').checked) {
+    const g = parseInt(document.getElementById('snapSize').value) * scale;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < canvas.width; x += g) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+    for (let y = 0; y < canvas.height; y += g) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+  }
+
+  // Existing lines
+  lines.forEach((l, i) => {
+    const a = toCanvas(l.x1, l.y1), b = toCanvas(l.x2, l.y2);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = i === selectedIdx ? '#ffff00' : l.color;
+    ctx.lineWidth = Math.max(1, l.width * scale / 20);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // endpoints
+    if (i === selectedIdx) {
+      [a, b].forEach(pt => {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffff00';
+        ctx.fill();
+      });
+    }
+  });
+
+  // Preview line while drawing
+  if (drawing) {
+    const a = toCanvas(startX, startY), b = toCanvas(curX, curY);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = document.getElementById('strokeColor').value;
+    ctx.lineWidth = Math.max(1, parseInt(document.getElementById('strokeWidth').value) * scale / 20);
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath(); ctx.arc(a.x, a.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  }
+}
+
+function updateList() {
+  const el = document.getElementById('lineList');
+  el.innerHTML = '';
+  document.getElementById('lineCount').textContent = lines.length;
+  lines.forEach((l, i) => {
+    const d = document.createElement('div');
+    d.className = 'line-item' + (i === selectedIdx ? ' selected' : '');
+    d.innerHTML = `<span>#${i+1} (${Math.round(l.x1)},${Math.round(l.y1)})→(${Math.round(l.x2)},${Math.round(l.y2)})</span>
+      <span style="color:${l.color}">■</span>`;
+    d.onclick = () => { selectedIdx = i; updateList(); render(); };
+    el.appendChild(d);
+  });
+}
+
+function deleteSelected() {
+  if (selectedIdx < 0 || selectedIdx >= lines.length) return;
+  pushHistory();
+  lines.splice(selectedIdx, 1);
+  selectedIdx = -1;
+  updateList(); render();
+}
+
+function clearAll() {
+  if (!confirm('Xóa tất cả đường collision?')) return;
+  pushHistory();
+  lines = []; selectedIdx = -1;
+  updateList(); render();
+}
+
+function pushHistory() {
+  history.push(JSON.parse(JSON.stringify(lines)));
+  if (history.length > 50) history.shift();
+}
+
+function undo() {
+  if (!history.length) return;
+  lines = history.pop();
+  selectedIdx = -1;
+  updateList(); render();
+}
+
+// ---- XML I/O ----
+
+const DEFAULT_XML = `<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="1997dp"
+    android:height="3258dp"
+    android:viewportWidth="1997"
+    android:viewportHeight="3258">
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M14 931L14 20"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M875.06 903L0.06 908"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1151 1365L1151 898"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1151 2287L1151 1993"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M814.77 1420L36.48 1402.04"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M805 1689L805 1410"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M805 2227L805 1921"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1167 3234.23L1151 2556.23"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981 1375L1177 1375"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981 2297L1177 2297"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981.14 1726L1177.14 1737"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M814.66 2236.99L23.66 2209.99"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M783.58 2598.99L5.58 2565.99"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M14 3257L14 1410"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1987 3257.1L1954 20.1"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M5.88 33L1963.88 10"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M38.88 3247L1996.88 3224"/>
+</vector>`;
+
+function loadXML() {
+  document.getElementById('xmlInput').value = DEFAULT_XML;
+  parseXMLInput();
+}
+
+function parseXMLInput() {
+  const xml = document.getElementById('xmlInput').value.trim();
+  if (!xml) return;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    const vector = doc.querySelector('vector');
+    if (vector) {
+      const w = parseFloat(vector.getAttribute('android:viewportWidth') || vpW);
+      const h = parseFloat(vector.getAttribute('android:viewportHeight') || vpH);
+      document.getElementById('vpW').value = w;
+      document.getElementById('vpH').value = h;
+      vpW = w; vpH = h;
+    }
+    const paths = doc.querySelectorAll('path');
+    pushHistory();
+    lines = [];
+    paths.forEach(p => {
+      const d = p.getAttribute('android:pathData') || '';
+      const m = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*L\s*([\d.-]+)\s+([\d.-]+)/i);
+      if (m) {
+        const color = (p.getAttribute('android:strokeColor') || '#FF000000').replace('FF','#').replace('#FF','#');
+        const sw = parseFloat(p.getAttribute('android:strokeWidth') || 20);
+        lines.push({ x1: parseFloat(m[1]), y1: parseFloat(m[2]), x2: parseFloat(m[3]), y2: parseFloat(m[4]), color: '#ff0000', width: sw });
+      }
+    });
+    initCanvas();
+    updateList();
+  } catch(e) { alert('XML parse error: ' + e); }
+}
+
+function exportXML() {
+  const w = parseInt(document.getElementById('vpW').value) || 1997;
+  const h = parseInt(document.getElementById('vpH').value) || 3258;
+  let xml = `<vector xmlns:android="http://schemas.android.com/apk/res/android"\n`;
+  xml += `    android:width="${w}dp"\n`;
+  xml += `    android:height="${h}dp"\n`;
+  xml += `    android:viewportWidth="${w}"\n`;
+  xml += `    android:viewportHeight="${h}">\n`;
+  lines.forEach(l => {
+    const hex = l.color.replace('#','').toUpperCase();
+    const fullHex = hex.length === 6 ? 'FF' + hex : hex;
+    const sw = l.width;
+    const x1 = +l.x1.toFixed(2), y1 = +l.y1.toFixed(2);
+    const x2 = +l.x2.toFixed(2), y2 = +l.y2.toFixed(2);
+    xml += `    <path\n`;
+    xml += `        android:strokeColor="#${fullHex}"\n`;
+    xml += `        android:strokeWidth="${sw}"\n`;
+    xml += `        android:pathData="M${x1} ${y1}L${x2} ${y2}"/>\n`;
+  });
+  xml += `</vector>`;
+  document.getElementById('xmlText').value = xml;
+  document.getElementById('xmlOutput').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+}
+
+function copyXML() {
+  const ta = document.getElementById('xmlText');
+  ta.select();
+  document.execCommand('copy');
+  alert('Đã copy XML!');
+}
+
+function closeXML() {
+  document.getElementById('xmlOutput').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+  if (e.ctrlKey && e.key === 'z') undo();
+  if (e.key === 'd') setMode('draw');
+  if (e.key === 's') setMode('select');
+});
+
+// Init
+initCanvas();
+</script>
+</body>
+</html>

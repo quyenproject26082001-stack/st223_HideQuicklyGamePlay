@@ -1,5 +1,6 @@
 package com.wanted.poster.maker.activity_app.game
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -29,6 +30,10 @@ class GameActivity : AppCompatActivity() {
         }
 
         binding.btnBack.setOnClickListener { finish() }
+
+        binding.btnPlayGame.setOnClickListener {
+            startActivity(Intent(this, ChooseMapActivity::class.java))
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

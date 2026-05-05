@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp">
+
+    <ImageView
+        android:id="@+id/imgMap"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:scaleType="centerCrop"
+        android:background="#2A2A2A" />
+
+    <!-- Approach badge (top-right) -->
+    <TextView
+        android:id="@+id/tvApproach"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="6dp"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <!-- Map label (bottom-left) -->
+    <TextView
+        android:id="@+id/tvMapLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="6dp"
+        android:background="#CC000000"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <!-- Selected highlight border -->
+    <View
+        android:id="@+id/viewSelected"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:background="#442196F3"
+        android:visibility="gone" />
+
+</FrameLayout>

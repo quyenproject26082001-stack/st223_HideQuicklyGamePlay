@@ -32,6 +32,18 @@
             tools:node="remove" />
 
         <activity
+            android:name=".activity_app.game.ChooseMapActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".activity_app.game.ChooseNumberActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".activity_app.game.PlayingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activity_app.oldwest.OldWestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

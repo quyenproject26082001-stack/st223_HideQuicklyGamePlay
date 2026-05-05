@@ -17,7 +17,6 @@ class GameView @JvmOverloads constructor(
     private lateinit var mapBitmap: Bitmap
     private lateinit var collisionBitmap: Bitmap
     private var debugBitmap: Bitmap? = null
-
     // Killer = người chơi điều khiển, hiders = người trốn
     // Vị trí normalized khớp với spawn points (chấm xanh) trong 1_collision.png
     val killer = Player(x = 0.30f, y = 0.27f, isKiller = true, name = "Killer")
@@ -119,12 +118,22 @@ class GameView @JvmOverloads constructor(
         }
     }
 
-    // Kiểm tra có thể đi đến vị trí (normalized) không
-    fun canMoveTo(nx: Float, ny: Float): Boolean {
+    // Kiểm tra 1 pixel (normalized) có phải tường không
+    private fun isWalkable(nx: Float, ny: Float): Boolean {
         if (!::collisionBitmap.isInitialized) return true
         val bx = (nx * collisionBitmap.width).toInt().coerceIn(0, collisionBitmap.width - 1)
         val by = (ny * collisionBitmap.height).toInt().coerceIn(0, collisionBitmap.height - 1)
         return collisionBitmap.getPixel(bx, by) != Color.BLACK
+    }
+
+    // Kiểm tra toàn bộ vùng nhân vật (trung tâm + 4 điểm rìa theo bán kính)
+    fun canMoveTo(nx: Float, ny: Float): Boolean {
+        val r = if (width > 0) 26f / width else 0.025f
+        return isWalkable(nx, ny) &&
+               isWalkable(nx - r, ny) &&
+               isWalkable(nx + r, ny) &&
+               isWalkable(nx, ny - r) &&
+               isWalkable(nx, ny + r)
     }
 
     fun isDoor(nx: Float, ny: Float): Boolean {
