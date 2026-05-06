@@ -28,6 +28,9 @@ class MapNumberView @JvmOverloads constructor(
 
     private var mapBitmap: Bitmap? = null
     private var killerBitmap: Bitmap? = null
+    private var debugCollisionBitmap: Bitmap? = null
+    var showDebugCollision = false
+    private val debugPaint = Paint().apply { alpha = 140 }
     private val mapRect = RectF()
 
     // Vị trí số trên map 1 (normalized 0..1 so với map image)
@@ -140,7 +143,12 @@ class MapNumberView @JvmOverloads constructor(
         resetKillerPos()
     }
 
-    fun loadAssets(mapIndex: Int, killerIndex: Int) {
+    fun setDebugCollision(bitmap: Bitmap?) {
+        debugCollisionBitmap = bitmap
+        invalidate()
+    }
+
+    fun loadAssets(mapIndex: Int, killerIndex: Int, hiderSpawns: List<PointF> = emptyList()) {
         try {
             mapBitmap = context.assets.open("Map/$mapIndex.jpg")
                 .use { BitmapFactory.decodeStream(it) }
@@ -149,7 +157,10 @@ class MapNumberView @JvmOverloads constructor(
             killerBitmap = context.assets.open("killer_removebg/$killerIndex.png")
                 .use { BitmapFactory.decodeStream(it) }
         } catch (_: Exception) {}
-        numberPositions = defaultPositionsForMap1()
+        numberPositions = if (hiderSpawns.isNotEmpty())
+            hiderSpawns.mapIndexed { i, p -> (i + 1) to p }.toMap()
+        else
+            defaultPositionsForMap1()
         if (width > 0) computeMapRect(width, height)
         invalidate()
     }
@@ -183,6 +194,11 @@ class MapNumberView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         mapBitmap?.let { canvas.drawBitmap(it, null, mapRect, null) }
+
+        // Debug: collision overlay chồng lên map
+        if (showDebugCollision) {
+            debugCollisionBitmap?.let { canvas.drawBitmap(it, null, mapRect, debugPaint) }
+        }
 
         // Draw killer trail
         if (killerTrail.size >= 2) {

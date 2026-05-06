@@ -8,130 +8,201 @@
   body { background: #1a1a2e; color: #eee; font-family: monospace; display: flex; height: 100vh; overflow: hidden; }
 
   #sidebar {
-    width: 260px; min-width: 260px; background: #16213e; padding: 12px;
-    display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+    width: 270px; min-width: 270px; background: #16213e; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
   }
-  #sidebar h2 { color: #e94560; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+  #sidebar h2 { color: #e94560; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
 
-  .section { background: #0f3460; border-radius: 6px; padding: 10px; }
-  .section label { font-size: 12px; color: #aaa; display: block; margin-bottom: 4px; }
+  .section { background: #0f3460; border-radius: 6px; padding: 8px; }
+  .section label { font-size: 11px; color: #aaa; display: block; margin-bottom: 4px; }
 
+  /* Palette */
+  #palette { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .preset-btn {
+    padding: 6px 4px; border: 2px solid transparent; border-radius: 5px;
+    cursor: pointer; font-size: 11px; font-weight: bold; text-align: center;
+    transition: all .15s; background: #1a1a2e; color: #eee;
+  }
+  .preset-btn:hover { opacity: 0.85; }
+  .preset-btn.active { border-color: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+
+  /* Tools */
+  .tool-row { display: flex; gap: 4px; }
   button {
-    width: 100%; padding: 7px; border: none; border-radius: 4px;
-    cursor: pointer; font-size: 12px; font-weight: bold; transition: opacity .2s;
+    flex: 1; padding: 6px; border: none; border-radius: 4px;
+    cursor: pointer; font-size: 11px; font-weight: bold; transition: opacity .2s;
   }
   button:hover { opacity: 0.85; }
-  button.active { outline: 2px solid #e94560; }
-
-  .btn-draw   { background: #e94560; color: #fff; }
-  .btn-select { background: #533483; color: #fff; }
+  button.active { outline: 2px solid #fff; }
   .btn-delete { background: #c0392b; color: #fff; }
-  .btn-clear  { background: #555; color: #fff; }
+  .btn-clear  { background: #555;    color: #fff; }
   .btn-export { background: #27ae60; color: #fff; }
   .btn-load   { background: #2980b9; color: #fff; }
-  .btn-undo   { background: #777; color: #fff; }
+  .btn-undo   { background: #777;    color: #fff; }
+  .btn-mode   { background: #533483; color: #fff; }
+  .btn-mode.active { background: #7b52c5; outline: 2px solid #fff; }
 
-  #lineList { max-height: 200px; overflow-y: auto; font-size: 11px; }
-  .line-item {
-    padding: 4px 6px; margin: 2px 0; background: #1a1a2e;
+  /* Item list */
+  #itemList { max-height: 160px; overflow-y: auto; font-size: 10px; }
+  .item-row {
+    padding: 3px 6px; margin: 2px 0; background: #1a1a2e;
     border-radius: 3px; cursor: pointer; display: flex; justify-content: space-between;
     border-left: 3px solid #533483;
   }
-  .line-item.selected { border-left-color: #e94560; background: #2a1a2e; }
-  .line-item:hover { background: #2a2a4e; }
-  .line-item span { color: #aaa; }
+  .item-row.selected { border-left-color: #ffff00; background: #2a2a0e; }
+  .item-row:hover { background: #2a2a4e; }
 
+  /* Legend */
+  #legend { display: flex; flex-direction: column; gap: 3px; }
+  .leg-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+  .leg-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #444; flex-shrink: 0; }
+
+  /* Canvas */
   #canvas-container {
     flex: 1; overflow: auto; background: #111; display: flex;
-    align-items: flex-start; justify-content: flex-start; position: relative;
+    align-items: flex-start; justify-content: flex-start;
   }
   #mainCanvas { cursor: crosshair; display: block; }
   #mainCanvas.select-mode { cursor: default; }
 
-  #coords { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7);
-    padding: 5px 10px; border-radius: 4px; font-size: 12px; pointer-events: none; }
+  #coords { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.75);
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; pointer-events: none; }
 
-  input[type=range] { width: 100%; }
-  input[type=color] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
-  input[type=number] { width: 100%; padding: 4px; background: #1a1a2e; border: 1px solid #333;
-    border-radius: 4px; color: #eee; font-size: 12px; }
+  input[type=range]  { width: 100%; }
+  input[type=number] { width: 100%; padding: 3px; background: #1a1a2e; border: 1px solid #333;
+    border-radius: 4px; color: #eee; font-size: 11px; }
 
+  /* XML popup */
   #xmlOutput { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 80%; max-height: 80vh; background: #111; border: 1px solid #e94560;
     border-radius: 8px; z-index: 100; padding: 16px; overflow-y: auto; }
   #xmlOutput textarea { width: 100%; height: 300px; background: #1a1a2e; color: #0f0;
-    border: none; font-family: monospace; font-size: 12px; padding: 8px; border-radius: 4px; }
-  #xmlOutput button { margin-top: 8px; }
+    border: none; font-family: monospace; font-size: 11px; padding: 8px; border-radius: 4px; }
   #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+  kbd { background:#0f3460; border:1px solid #4a6fa5; border-radius:3px;
+    padding:1px 5px; font-size:10px; font-family:monospace; color:#eee; }
 
-  .snap-indicator { font-size: 11px; color: #e94560; }
+  .active-info { font-size: 11px; padding: 4px 6px; border-radius: 4px; background: #1a1a2e;
+    display: flex; align-items: center; gap: 6px; }
+  .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
-  <h2>Collision Editor</h2>
+  <h2>🗺 Collision Editor</h2>
 
+  <!-- Map image -->
   <div class="section">
     <label>Map Image</label>
-    <input type="file" id="imgInput" accept="image/*" style="font-size:11px;color:#aaa;width:100%">
-    <div style="margin-top:6px">
-      <label>Opacity nền</label>
-      <input type="range" id="bgOpacity" min="0" max="100" value="70">
+    <input type="file" id="imgInput" accept="image/*" style="font-size:10px;color:#aaa;width:100%">
+    <div style="margin-top:5px">
+      <label>Opacity nền: <span id="opacVal">70</span>%</label>
+      <input type="range" id="bgOpacity" min="0" max="100" value="70"
+        oninput="bgOpacity=this.value/100;document.getElementById('opacVal').textContent=this.value;render()">
     </div>
   </div>
 
+  <!-- Viewport -->
   <div class="section">
-    <label>Viewport (Android)</label>
+    <label>Viewport (Android dp)</label>
     <div style="display:flex;gap:4px">
-      <input type="number" id="vpW" value="1997" placeholder="Width">
-      <input type="number" id="vpH" value="3258" placeholder="Height">
+      <input type="number" id="vpW" value="1997" placeholder="W">
+      <input type="number" id="vpH" value="3258" placeholder="H">
     </div>
   </div>
 
+  <!-- Palette -->
   <div class="section">
-    <label>Công cụ</label>
-    <button class="btn-draw active" id="btnDraw" onclick="setMode('draw')">✏️ Vẽ đường</button>
-    <div style="margin-top:4px"></div>
-    <button class="btn-select" id="btnSelect" onclick="setMode('select')">↖ Chọn / Di chuyển</button>
+    <label>Palette nhanh (click để chọn)</label>
+    <div id="palette"></div>
   </div>
 
+  <!-- Active preset info -->
+  <div class="active-info" id="activeInfo">
+    <div class="active-dot" id="activeDot"></div>
+    <span id="activeLabel">—</span>
+    <span id="activeModeTag" style="color:#aaa;font-size:10px"></span>
+  </div>
+
+  <!-- Mode buttons -->
   <div class="section">
-    <label>Màu collision</label>
-    <input type="color" id="strokeColor" value="#ff0000">
-    <div style="margin-top:6px">
-      <label>Stroke width (dp): <span id="swVal">20</span></label>
-      <input type="range" id="strokeWidth" min="1" max="60" value="20"
-        oninput="document.getElementById('swVal').textContent=this.value">
+    <label>Chế độ vẽ</label>
+    <div class="tool-row">
+      <button class="btn-mode active" id="btnDraw"   onclick="setTool('draw')">✏️ Line</button>
+      <button class="btn-mode"        id="btnDot"    onclick="setTool('dot')">⬤ Chấm</button>
+      <button class="btn-mode"        id="btnSelect" onclick="setTool('select')">↖ Select</button>
+    </div>
+    <div class="tool-row" style="margin-top:4px">
+      <button class="btn-mode" id="btnEraser" onclick="setTool('eraser')" style="background:#8B4513;flex:1">🧹 Tẩy</button>
+      <button class="btn-mode" id="btnBrush"  onclick="setTool('brush')"  style="background:#2a5a2a;flex:1">🤍 Vùng Spawn</button>
+    </div>
+    <div id="eraserSizeRow" style="display:none;margin-top:5px">
+      <label>Bán kính tẩy: <span id="erVal">80</span>dp</label>
+      <input type="range" id="eraserSize" min="10" max="300" value="80"
+        oninput="document.getElementById('erVal').textContent=this.value">
+    </div>
+    <div id="brushSizeRow" style="display:none;margin-top:5px">
+      <label>Cỡ bút vùng spawn: <span id="brVal">120</span>dp</label>
+      <input type="range" id="brushSize" min="20" max="400" value="120"
+        oninput="document.getElementById('brVal').textContent=this.value">
+      <label style="margin-top:4px">Độ mờ: <span id="brOpVal">30</span>%</label>
+      <input type="range" id="brushOpacity" min="5" max="80" value="30"
+        oninput="document.getElementById('brOpVal').textContent=this.value;render()">
     </div>
   </div>
 
+  <!-- Item list -->
+  <div class="section">
+    <label>Danh sách (<span id="itemCount">0</span>)</label>
+    <div id="itemList"></div>
+    <div class="tool-row" style="margin-top:5px">
+      <button class="btn-delete" onclick="deleteSelected()">🗑 Xóa</button>
+      <button class="btn-undo"   onclick="undo()">↩ Undo</button>
+    </div>
+    <button class="btn-clear" onclick="clearAll()" style="width:100%;margin-top:4px">🗑 Xóa tất cả</button>
+  </div>
+
+  <!-- Load XML -->
+  <div class="section">
+    <label>Load / Import XML</label>
+    <button class="btn-load" onclick="loadDefaultXML()">📂 Load map1.xml mặc định</button>
+    <textarea id="xmlInput" placeholder="Hoặc paste XML vào đây..." style="width:100%;height:70px;margin-top:5px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#eee;font-size:10px;padding:4px"></textarea>
+    <button class="btn-load" onclick="parseXMLInput()" style="margin-top:3px;width:100%">⚙ Parse XML</button>
+  </div>
+
+  <!-- Snap -->
   <div class="section">
     <label>Snap to grid</label>
     <div style="display:flex;align-items:center;gap:8px">
-      <input type="checkbox" id="snapCheck"> <span style="font-size:12px">Bật snap</span>
+      <input type="checkbox" id="snapCheck">
+      <span style="font-size:11px">Bật snap</span>
+      <input type="number" id="snapSize" value="10" style="width:50px">
     </div>
-    <input type="number" id="snapSize" value="10" placeholder="Grid size" style="margin-top:4px">
   </div>
 
+  <!-- Legend -->
   <div class="section">
-    <label>Danh sách đường (<span id="lineCount">0</span>)</label>
-    <div id="lineList"></div>
-    <div style="margin-top:6px;display:flex;gap:4px">
-      <button class="btn-delete" onclick="deleteSelected()" style="flex:1">🗑 Xóa</button>
-      <button class="btn-undo" onclick="undo()" style="flex:1">↩ Undo</button>
+    <label>Legend màu</label>
+    <div id="legend"></div>
+  </div>
+
+  <button class="btn-export" onclick="exportXML()" style="width:100%">💾 Export Android XML</button>
+
+  <!-- Phím tắt -->
+  <div class="section">
+    <label>⌨ Phím tắt</label>
+    <div style="font-size:10px;line-height:1.8;color:#ccc">
+      <div><kbd>1</kbd>–<kbd>9</kbd> &nbsp;Chọn preset</div>
+      <div><kbd>L</kbd> &nbsp;✏️ Vẽ line</div>
+      <div><kbd>P</kbd> &nbsp;⬤ Chấm điểm</div>
+      <div><kbd>S</kbd> &nbsp;↖ Select / di chuyển</div>
+      <div><kbd>E</kbd> &nbsp;🧹 Tẩy</div>
+      <div><kbd>B</kbd> &nbsp;🤍 Vùng Spawn</div>
+      <div><kbd>Del</kbd> &nbsp;Xóa item đang chọn</div>
+      <div><kbd>Ctrl</kbd>+<kbd>Z</kbd> &nbsp;Undo</div>
     </div>
-    <button class="btn-clear" onclick="clearAll()" style="margin-top:4px">🗑 Xóa tất cả</button>
   </div>
-
-  <div class="section">
-    <label>Load từ XML</label>
-    <button class="btn-load" onclick="loadXML()">📂 Load map1.xml</button>
-    <textarea id="xmlInput" placeholder="Paste XML vào đây..." style="width:100%;height:80px;margin-top:6px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#eee;font-size:11px;padding:4px"></textarea>
-    <button class="btn-load" onclick="parseXMLInput()" style="margin-top:4px">Parse XML</button>
-  </div>
-
-  <button class="btn-export" onclick="exportXML()">💾 Export Android XML</button>
 </div>
 
 <div id="canvas-container">
@@ -139,40 +210,89 @@
 </div>
 
 <div id="coords">x: 0, y: 0</div>
-
 <div id="overlay" onclick="closeXML()"></div>
 <div id="xmlOutput">
   <h3 style="color:#e94560;margin-bottom:8px">Android Vector Drawable XML</h3>
   <textarea id="xmlText" readonly></textarea>
-  <div style="display:flex;gap:8px">
+  <div style="display:flex;gap:8px;margin-top:8px">
     <button class="btn-export" onclick="copyXML()">📋 Copy</button>
-    <button class="btn-clear" onclick="closeXML()">✕ Đóng</button>
+    <button class="btn-clear"  onclick="closeXML()">✕ Đóng</button>
   </div>
 </div>
 
 <script>
+// ─── Presets ────────────────────────────────────────────────────────────────
+const PRESETS = [
+  { id:'wall',    emoji:'🧱', label:'Tường',        color:'#000000', tool:'draw', width:20 },
+  { id:'door',    emoji:'🚪', label:'Cửa',          color:'#FF0000', tool:'draw', width:20 },
+  { id:'killer',  emoji:'💀', label:'Killer Spawn', color:'#00FF00', tool:'dot',  size:60  },
+  { id:'hider',   emoji:'🔵', label:'Hider Spawn',  color:'#0080FF', tool:'dot',  size:60  },
+  { id:'bedroom', emoji:'😴', label:'Phòng ngủ',    color:'#FFFF00', tool:'dot',  size:60  },
+  { id:'bath',    emoji:'🛁', label:'Phòng tắm',    color:'#00FFFF', tool:'dot',  size:60  },
+  { id:'toilet',  emoji:'🚽', label:'Nhà vệ sinh',  color:'#FF00FF', tool:'dot',  size:60  },
+  { id:'kitchen', emoji:'🍳', label:'Bếp',          color:'#FF8000', tool:'dot',  size:60  },
+  { id:'living',  emoji:'🛋', label:'Phòng khách',  color:'#FF69B4', tool:'dot',  size:60  },
+];
+
+let activePreset = PRESETS[0];
+
+function buildPalette() {
+  const el = document.getElementById('palette');
+  PRESETS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (p === activePreset ? ' active' : '');
+    btn.id = 'preset_' + p.id;
+    btn.style.background = p.color === '#000000' ? '#333' : p.color + '33';
+    btn.style.borderColor = p.color;
+    btn.style.color = '#fff';
+    btn.innerHTML = `${p.emoji}<br><span style="font-size:9px">${p.label}</span>`;
+    btn.onclick = () => selectPreset(p);
+    el.appendChild(btn);
+  });
+
+  const leg = document.getElementById('legend');
+  PRESETS.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'leg-row';
+    row.innerHTML = `<div class="leg-swatch" style="background:${p.color}"></div>
+      <span>${p.emoji} ${p.label} <span style="color:#666">(${p.tool})</span></span>`;
+    leg.appendChild(row);
+  });
+}
+
+function selectPreset(p) {
+  activePreset = p;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('preset_' + p.id).classList.add('active');
+  setTool(p.tool);
+  updateActiveInfo();
+}
+
+function updateActiveInfo() {
+  document.getElementById('activeDot').style.background = activePreset.color;
+  document.getElementById('activeLabel').textContent = activePreset.emoji + ' ' + activePreset.label;
+  document.getElementById('activeModeTag').textContent = '[' + tool + ']';
+}
+
+// ─── Canvas setup ────────────────────────────────────────────────────────────
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 
-let vpW = 1997, vpH = 3258;
-let scale = 1;
-let bgImg = null;
-let bgOpacity = 0.7;
-let lines = [];       // {x1,y1,x2,y2,color,width}
+let vpW = 1997, vpH = 3258, scale = 1;
+let bgImg = null, bgOpacity = 0.7;
+let items = [];      // {type:'line'|'dot', ...}
 let selectedIdx = -1;
-let mode = 'draw';    // 'draw' | 'select'
+let tool = 'draw';   // 'draw' | 'dot' | 'select'
 let drawing = false;
 let startX, startY, curX, curY;
-let dragOffX, dragOffY, dragLine = null;
-let history = [];     // for undo
+let dragOff = null, dragSnap = null;
+let history = [];
 
-// Init canvas size
 function initCanvas() {
   vpW = parseInt(document.getElementById('vpW').value) || 1997;
   vpH = parseInt(document.getElementById('vpH').value) || 3258;
-  const container = document.getElementById('canvas-container');
-  const maxH = container.clientHeight - 20;
-  scale = Math.min((container.clientWidth - 20) / vpW, maxH / vpH);
+  const cont = document.getElementById('canvas-container');
+  scale = Math.min((cont.clientWidth - 4) / vpW, (cont.clientHeight - 4) / vpH);
   canvas.width  = Math.round(vpW * scale);
   canvas.height = Math.round(vpH * scale);
   render();
@@ -184,120 +304,124 @@ window.addEventListener('resize', initCanvas);
 
 document.getElementById('imgInput').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
-  const url = URL.createObjectURL(f);
   bgImg = new Image();
   bgImg.onload = render;
-  bgImg.src = url;
+  bgImg.src = URL.createObjectURL(f);
 });
 
-document.getElementById('bgOpacity').addEventListener('input', e => {
-  bgOpacity = e.target.value / 100; render();
-});
-
-function setMode(m) {
-  mode = m;
-  canvas.className = m === 'select' ? 'select-mode' : '';
-  document.getElementById('btnDraw').classList.toggle('active', m === 'draw');
-  document.getElementById('btnSelect').classList.toggle('active', m === 'select');
+// ─── Tool mode ───────────────────────────────────────────────────────────────
+function setTool(t) {
+  tool = t;
+  canvas.className = t === 'select' ? 'select-mode' : '';
+  ['Draw','Dot','Select','Eraser','Brush'].forEach(n =>
+    document.getElementById('btn'+n) &&
+    document.getElementById('btn'+n).classList.toggle('active', t === n.toLowerCase())
+  );
+  document.getElementById('eraserSizeRow').style.display = t === 'eraser' ? 'block' : 'none';
+  document.getElementById('brushSizeRow').style.display  = t === 'brush'  ? 'block' : 'none';
+  updateActiveInfo();
 }
 
-function snap(v) {
+// ─── Coord helpers ────────────────────────────────────────────────────────────
+function snapV(v) {
   if (!document.getElementById('snapCheck').checked) return v;
   const g = parseInt(document.getElementById('snapSize').value) || 10;
   return Math.round(v / g) * g;
 }
+function toVP(cx, cy)     { return { x: snapV(cx / scale), y: snapV(cy / scale) }; }
+function toCanvas(vx, vy) { return { x: vx * scale, y: vy * scale }; }
 
-function toVP(cx, cy) {
-  return { x: snap(cx / scale), y: snap(cy / scale) };
-}
-
-function toCanvas(vx, vy) {
-  return { x: vx * scale, y: vy * scale };
-}
-
+// ─── Hit test ─────────────────────────────────────────────────────────────────
 function hitTest(vx, vy) {
-  const thresh = 10 / scale;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const l = lines[i];
-    const dx = l.x2 - l.x1, dy = l.y2 - l.y1;
-    const len = Math.hypot(dx, dy);
-    if (len < 1) continue;
-    const t = ((vx - l.x1) * dx + (vy - l.y1) * dy) / (len * len);
-    const tc = Math.max(0, Math.min(1, t));
-    const px = l.x1 + tc * dx - vx, py = l.y1 + tc * dy - vy;
-    if (Math.hypot(px, py) < thresh) return i;
+  const thresh = 12 / scale;
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i];
+    if (it.type === 'dot') {
+      if (Math.hypot(vx - it.x, vy - it.y) < thresh * 2) return i;
+    } else {
+      const dx = it.x2 - it.x1, dy = it.y2 - it.y1;
+      const len = Math.hypot(dx, dy); if (len < 1) continue;
+      const t = ((vx - it.x1)*dx + (vy - it.y1)*dy) / (len*len);
+      const tc = Math.max(0, Math.min(1, t));
+      if (Math.hypot(it.x1 + tc*dx - vx, it.y1 + tc*dy - vy) < thresh) return i;
+    }
   }
   return -1;
 }
 
+// ─── Mouse events ─────────────────────────────────────────────────────────────
 canvas.addEventListener('mousedown', e => {
-  const rect = canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-  const vp = toVP(cx, cy);
+  const r = canvas.getBoundingClientRect();
+  const vp = toVP(e.clientX - r.left, e.clientY - r.top);
 
-  if (mode === 'draw') {
-    drawing = true;
-    startX = vp.x; startY = vp.y;
-    curX = vp.x; curY = vp.y;
+  if (tool === 'eraser') { pushHistory(); eraseAt(vp.x, vp.y); return; }
+  if (tool === 'brush')  { pushHistory(); startZone(vp.x, vp.y); return; }
+  if (tool === 'dot') {
+    pushHistory();
+    items.push({ type:'dot', x:vp.x, y:vp.y,
+      color: activePreset.color, size: activePreset.size || 60 });
+    updateList(); render(); return;
+  }
+  if (tool === 'draw') {
+    drawing = true; startX = vp.x; startY = vp.y; curX = vp.x; curY = vp.y;
   } else {
     const idx = hitTest(vp.x, vp.y);
     selectedIdx = idx;
-    if (idx >= 0) {
-      dragLine = { ...lines[idx] };
-      dragOffX = vp.x; dragOffY = vp.y;
-    }
-    updateList();
-    render();
+    if (idx >= 0) { dragOff = { x:vp.x, y:vp.y }; dragSnap = { ...items[idx] }; }
+    updateList(); render();
   }
 });
+
+let eraserPos = null; // {x,y} in viewport coords, for drawing circle
 
 canvas.addEventListener('mousemove', e => {
-  const rect = canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-  const vp = toVP(cx, cy);
+  const r = canvas.getBoundingClientRect();
+  const vp = toVP(e.clientX - r.left, e.clientY - r.top);
   document.getElementById('coords').textContent = `x: ${Math.round(vp.x)}, y: ${Math.round(vp.y)}`;
 
-  if (mode === 'draw' && drawing) {
-    curX = vp.x; curY = vp.y; render();
-  } else if (mode === 'select' && dragLine && e.buttons === 1) {
-    const dx = vp.x - dragOffX, dy = vp.y - dragOffY;
-    lines[selectedIdx] = {
-      ...lines[selectedIdx],
-      x1: dragLine.x1 + dx, y1: dragLine.y1 + dy,
-      x2: dragLine.x2 + dx, y2: dragLine.y2 + dy
-    };
+  if (tool === 'eraser') {
+    eraserPos = vp;
+    if (e.buttons === 1) eraseAt(vp.x, vp.y); else render();
+    return;
+  }
+  if (tool === 'brush') {
+    eraserPos = vp; // reuse for brush preview circle
+    if (e.buttons === 1) addZonePoint(vp.x, vp.y); else render();
+    return;
+  }
+  eraserPos = null;
+  if (tool === 'draw' && drawing) { curX = vp.x; curY = vp.y; render(); }
+  else if (tool === 'select' && dragOff && e.buttons === 1 && selectedIdx >= 0) {
+    const dx = vp.x - dragOff.x, dy = vp.y - dragOff.y;
+    const s = dragSnap, it = items[selectedIdx];
+    if (s.type === 'dot') { it.x = s.x + dx; it.y = s.y + dy; }
+    else { it.x1 = s.x1+dx; it.y1 = s.y1+dy; it.x2 = s.x2+dx; it.y2 = s.y2+dy; }
     render();
   }
 });
 
-canvas.addEventListener('mouseup', e => {
-  const rect = canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-  const vp = toVP(cx, cy);
+canvas.addEventListener('mouseleave', () => { eraserPos = null; render(); });
 
-  if (mode === 'draw' && drawing) {
+canvas.addEventListener('mouseup', e => {
+  const r = canvas.getBoundingClientRect();
+  const vp = toVP(e.clientX - r.left, e.clientY - r.top);
+  if (tool === 'draw' && drawing) {
     drawing = false;
-    const dx = Math.abs(vp.x - startX), dy = Math.abs(vp.y - startY);
-    if (dx > 2 || dy > 2) {
+    if (Math.abs(vp.x - startX) > 2 || Math.abs(vp.y - startY) > 2) {
       pushHistory();
-      lines.push({
-        x1: startX, y1: startY, x2: vp.x, y2: vp.y,
-        color: document.getElementById('strokeColor').value,
-        width: parseInt(document.getElementById('strokeWidth').value)
-      });
+      items.push({ type:'line', x1:startX, y1:startY, x2:vp.x, y2:vp.y,
+        color: activePreset.color,
+        width: activePreset.width || 20 });
       updateList();
     }
     render();
-  } else if (mode === 'select') {
-    dragLine = null;
-    updateList();
-  }
+  } else if (tool === 'select') { dragOff = null; dragSnap = null; }
 });
 
+// ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Background
   if (bgImg) {
     ctx.globalAlpha = bgOpacity;
     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -305,103 +429,211 @@ function render() {
   } else {
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#555';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('← Upload ảnh map', canvas.width / 2, canvas.height / 2);
+    ctx.fillStyle = '#666'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('← Upload ảnh map', canvas.width/2, canvas.height/2);
   }
 
-  // Grid hint
+  // Spawn zones (dưới collision lines, không đè màu khác)
+  renderZones();
+
+  // Grid
   if (document.getElementById('snapCheck').checked) {
     const g = parseInt(document.getElementById('snapSize').value) * scale;
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x < canvas.width; x += g) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
+    for (let x = 0; x < canvas.width;  x += g) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
     for (let y = 0; y < canvas.height; y += g) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
   }
 
-  // Existing lines
-  lines.forEach((l, i) => {
-    const a = toCanvas(l.x1, l.y1), b = toCanvas(l.x2, l.y2);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = i === selectedIdx ? '#ffff00' : l.color;
-    ctx.lineWidth = Math.max(1, l.width * scale / 20);
-    ctx.lineCap = 'round';
-    ctx.stroke();
+  // Items
+  items.forEach((it, i) => {
+    const sel = i === selectedIdx;
+    const col = sel ? '#ffff00' : it.color;
 
-    // endpoints
-    if (i === selectedIdx) {
-      [a, b].forEach(pt => {
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffff00';
-        ctx.fill();
-      });
+    if (it.type === 'dot') {
+      const c = toCanvas(it.x, it.y);
+      const r = Math.max(6, (it.size || 60) * scale / 40);
+      ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI*2);
+      ctx.fillStyle = col + (sel ? 'ff' : 'cc'); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
+
+      // Label
+      const preset = PRESETS.find(p => p.color === it.color);
+      if (preset) {
+        ctx.font = `${Math.max(10, r*1.2)}px monospace`;
+        ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+        ctx.fillText(preset.emoji, c.x, c.y + r * 0.38);
+      }
+    } else {
+      const a = toCanvas(it.x1, it.y1), b = toCanvas(it.x2, it.y2);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = Math.max(1.5, (it.width||20) * scale / 20);
+      ctx.lineCap = 'round'; ctx.setLineDash([]); ctx.stroke();
+      if (sel) {
+        [a,b].forEach(pt => {
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI*2);
+          ctx.fillStyle = '#ffff00'; ctx.fill();
+        });
+      }
     }
   });
 
-  // Preview line while drawing
+  // Tool cursor preview (eraser = orange, brush = white)
+  if ((tool === 'eraser' || tool === 'brush') && eraserPos) {
+    const ec = toCanvas(eraserPos.x, eraserPos.y);
+    const er = (tool === 'eraser' ? eraserRadius() : brushRadius()) * scale;
+    const stroke = tool === 'eraser' ? 'rgba(255,100,50,0.8)' : 'rgba(255,255,255,0.7)';
+    const fill   = tool === 'eraser' ? 'rgba(255,80,30,0.12)' : 'rgba(255,255,255,0.15)';
+    ctx.beginPath(); ctx.arc(ec.x, ec.y, er, 0, Math.PI*2);
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2;
+    ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = fill; ctx.fill();
+  }
+
+  // Preview while drawing
   if (drawing) {
     const a = toCanvas(startX, startY), b = toCanvas(curX, curY);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = document.getElementById('strokeColor').value;
-    ctx.lineWidth = Math.max(1, parseInt(document.getElementById('strokeWidth').value) * scale / 20);
-    ctx.setLineDash([5, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = activePreset.color; ctx.lineWidth = 2;
+    ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(a.x, a.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
     ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
   }
 }
 
+// ─── List ─────────────────────────────────────────────────────────────────────
 function updateList() {
-  const el = document.getElementById('lineList');
+  const el = document.getElementById('itemList');
   el.innerHTML = '';
-  document.getElementById('lineCount').textContent = lines.length;
-  lines.forEach((l, i) => {
+  document.getElementById('itemCount').textContent = items.length;
+  items.forEach((it, i) => {
+    const preset = PRESETS.find(p => p.color === it.color);
+    const label = preset ? preset.emoji + ' ' + preset.label : it.color;
+    const coords = it.type === 'dot'
+      ? `(${Math.round(it.x)},${Math.round(it.y)})`
+      : `(${Math.round(it.x1)},${Math.round(it.y1)})→(${Math.round(it.x2)},${Math.round(it.y2)})`;
     const d = document.createElement('div');
-    d.className = 'line-item' + (i === selectedIdx ? ' selected' : '');
-    d.innerHTML = `<span>#${i+1} (${Math.round(l.x1)},${Math.round(l.y1)})→(${Math.round(l.x2)},${Math.round(l.y2)})</span>
-      <span style="color:${l.color}">■</span>`;
+    d.className = 'item-row' + (i === selectedIdx ? ' selected' : '');
+    d.innerHTML = `<span>${label}</span><span style="color:#888;font-size:9px">${coords}</span>`;
     d.onclick = () => { selectedIdx = i; updateList(); render(); };
     el.appendChild(d);
   });
 }
 
-function deleteSelected() {
-  if (selectedIdx < 0 || selectedIdx >= lines.length) return;
-  pushHistory();
-  lines.splice(selectedIdx, 1);
-  selectedIdx = -1;
+// ─── Brush / Spawn Zone ───────────────────────────────────────────────────────
+let zones = []; // [{pts:[{x,y}...], brushR, opacity}] — drawn under collision items
+
+function brushRadius()  { return parseFloat(document.getElementById('brushSize').value)   || 120; }
+function brushOpacity() { return (parseFloat(document.getElementById('brushOpacity').value) || 30) / 100; }
+
+function startZone(x, y) {
+  zones.push({ pts:[{x,y}], brushR: brushRadius() });
+  render();
+}
+
+function addZonePoint(x, y) {
+  if (!zones.length) { startZone(x, y); return; }
+  const z = zones[zones.length - 1];
+  const last = z.pts[z.pts.length - 1];
+  // Only add point if moved enough (avoids redundant points)
+  if (Math.hypot(x - last.x, y - last.y) > z.brushR * 0.3) z.pts.push({x, y});
+  render();
+}
+
+function renderZones() {
+  if (!zones.length) return;
+  const op = brushOpacity();
+  zones.forEach(z => {
+    if (!z.pts.length) return;
+    const r = Math.max(4, z.brushR * scale);
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = `rgba(255,255,255,${op})`;
+    ctx.fillStyle   = `rgba(255,255,255,${op})`;
+    ctx.lineWidth   = r * 2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    if (z.pts.length === 1) {
+      const p = toCanvas(z.pts[0].x, z.pts[0].y);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+    } else {
+      ctx.beginPath();
+      const p0 = toCanvas(z.pts[0].x, z.pts[0].y);
+      ctx.moveTo(p0.x, p0.y);
+      z.pts.forEach(p => { const c = toCanvas(p.x, p.y); ctx.lineTo(c.x, c.y); });
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
+// ─── Eraser ───────────────────────────────────────────────────────────────────
+function eraserRadius() {
+  return parseFloat(document.getElementById('eraserSize').value) || 80;
+}
+
+// Clip a line segment against a circle — returns 0, 1 or 2 sub-segments
+function clipLineCircle(line, cx, cy, r) {
+  const dx = line.x2 - line.x1, dy = line.y2 - line.y1;
+  const fx = line.x1 - cx,      fy = line.y1 - cy;
+  const a = dx*dx + dy*dy;
+  if (a < 0.0001) return []; // zero-length line inside circle
+  const b = 2*(fx*dx + fy*dy);
+  const c = fx*fx + fy*fy - r*r;
+  const disc = b*b - 4*a*c;
+  if (disc < 0) return [line]; // no intersection → keep whole line
+
+  const sq = Math.sqrt(disc);
+  const t1 = (-b - sq) / (2*a);
+  const t2 = (-b + sq) / (2*a);
+  const enter = Math.max(0, t1);
+  const exit  = Math.min(1, t2);
+  if (enter >= exit) return [line]; // circle misses segment range
+
+  const result = [];
+  if (enter > 0.002)
+    result.push({ ...line, x2: line.x1 + enter*dx, y2: line.y1 + enter*dy });
+  if (exit < 0.998)
+    result.push({ ...line, x1: line.x1 + exit*dx,  y1: line.y1 + exit*dy  });
+  return result; // empty = whole segment was inside circle (deleted)
+}
+
+function eraseAt(ex, ey) {
+  const r = eraserRadius();
+  const next = [];
+  for (const it of items) {
+    if (it.type === 'dot') {
+      if (Math.hypot(it.x - ex, it.y - ey) > r) next.push(it);
+    } else {
+      next.push(...clipLineCircle(it, ex, ey, r));
+    }
+  }
+  items = next;
+  // Erase zone strokes — remove any stroke that has a point inside eraser radius
+  zones = zones.filter(z => !z.pts.some(p => Math.hypot(p.x - ex, p.y - ey) < r));
   updateList(); render();
 }
 
-function clearAll() {
-  if (!confirm('Xóa tất cả đường collision?')) return;
-  pushHistory();
-  lines = []; selectedIdx = -1;
-  updateList(); render();
-}
-
+// ─── History ──────────────────────────────────────────────────────────────────
 function pushHistory() {
-  history.push(JSON.parse(JSON.stringify(lines)));
+  history.push({ items: JSON.parse(JSON.stringify(items)), zones: JSON.parse(JSON.stringify(zones)) });
   if (history.length > 50) history.shift();
 }
-
 function undo() {
   if (!history.length) return;
-  lines = history.pop();
-  selectedIdx = -1;
-  updateList(); render();
+  const s = history.pop(); items = s.items; zones = s.zones;
+  selectedIdx = -1; updateList(); render();
+}
+function deleteSelected() {
+  if (selectedIdx < 0 || selectedIdx >= items.length) return;
+  pushHistory(); items.splice(selectedIdx, 1); selectedIdx = -1; updateList(); render();
+}
+function clearAll() {
+  if (!confirm('Xóa tất cả?')) return;
+  pushHistory(); items = []; zones = []; selectedIdx = -1; updateList(); render();
 }
 
-// ---- XML I/O ----
-
+// ─── XML I/O ──────────────────────────────────────────────────────────────────
 const DEFAULT_XML = `<vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="1997dp"
     android:height="3258dp"
@@ -426,60 +658,73 @@ const DEFAULT_XML = `<vector xmlns:android="http://schemas.android.com/apk/res/a
     <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M38.88 3247L1996.88 3224"/>
 </vector>`;
 
-function loadXML() {
+function loadDefaultXML() {
   document.getElementById('xmlInput').value = DEFAULT_XML;
   parseXMLInput();
+}
+
+function androidColorToHex(raw) {
+  // #AARRGGBB → #RRGGBB
+  const hex = raw.replace('#','');
+  return '#' + (hex.length === 8 ? hex.substring(2) : hex);
 }
 
 function parseXMLInput() {
   const xml = document.getElementById('xmlInput').value.trim();
   if (!xml) return;
   try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, 'text/xml');
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
     const vector = doc.querySelector('vector');
     if (vector) {
-      const w = parseFloat(vector.getAttribute('android:viewportWidth') || vpW);
-      const h = parseFloat(vector.getAttribute('android:viewportHeight') || vpH);
-      document.getElementById('vpW').value = w;
-      document.getElementById('vpH').value = h;
-      vpW = w; vpH = h;
+      vpW = parseFloat(vector.getAttribute('android:viewportWidth') || vpW);
+      vpH = parseFloat(vector.getAttribute('android:viewportHeight') || vpH);
+      document.getElementById('vpW').value = vpW;
+      document.getElementById('vpH').value = vpH;
     }
-    const paths = doc.querySelectorAll('path');
-    pushHistory();
-    lines = [];
-    paths.forEach(p => {
-      const d = p.getAttribute('android:pathData') || '';
-      const m = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*L\s*([\d.-]+)\s+([\d.-]+)/i);
-      if (m) {
-        const color = (p.getAttribute('android:strokeColor') || '#FF000000').replace('FF','#').replace('#FF','#');
-        const sw = parseFloat(p.getAttribute('android:strokeWidth') || 20);
-        lines.push({ x1: parseFloat(m[1]), y1: parseFloat(m[2]), x2: parseFloat(m[3]), y2: parseFloat(m[4]), color: '#ff0000', width: sw });
+    pushHistory(); items = [];
+    doc.querySelectorAll('path').forEach(p => {
+      const d   = p.getAttribute('android:pathData') || '';
+      const col = androidColorToHex(p.getAttribute('android:strokeColor') || '#FF000000');
+      const sw  = parseFloat(p.getAttribute('android:strokeWidth') || 20);
+      // Dot: M x yL x y (same point)
+      const dot = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*L\s*([\d.-]+)\s+([\d.-]+)/i);
+      if (dot) {
+        const x1=parseFloat(dot[1]),y1=parseFloat(dot[2]),x2=parseFloat(dot[3]),y2=parseFloat(dot[4]);
+        if (Math.abs(x1-x2)<1 && Math.abs(y1-y2)<1) {
+          items.push({ type:'dot', x:x1, y:y1, color:col, size:sw });
+        } else {
+          items.push({ type:'line', x1, y1, x2, y2, color:col, width:sw });
+        }
       }
     });
-    initCanvas();
-    updateList();
+    initCanvas(); updateList();
   } catch(e) { alert('XML parse error: ' + e); }
 }
 
+function hexToAndroid(hex) {
+  // #RRGGBB → #FFRRGGBB
+  return '#FF' + hex.replace('#','').toUpperCase();
+}
+
 function exportXML() {
-  const w = parseInt(document.getElementById('vpW').value) || 1997;
-  const h = parseInt(document.getElementById('vpH').value) || 3258;
   let xml = `<vector xmlns:android="http://schemas.android.com/apk/res/android"\n`;
-  xml += `    android:width="${w}dp"\n`;
-  xml += `    android:height="${h}dp"\n`;
-  xml += `    android:viewportWidth="${w}"\n`;
-  xml += `    android:viewportHeight="${h}">\n`;
-  lines.forEach(l => {
-    const hex = l.color.replace('#','').toUpperCase();
-    const fullHex = hex.length === 6 ? 'FF' + hex : hex;
-    const sw = l.width;
-    const x1 = +l.x1.toFixed(2), y1 = +l.y1.toFixed(2);
-    const x2 = +l.x2.toFixed(2), y2 = +l.y2.toFixed(2);
-    xml += `    <path\n`;
-    xml += `        android:strokeColor="#${fullHex}"\n`;
-    xml += `        android:strokeWidth="${sw}"\n`;
-    xml += `        android:pathData="M${x1} ${y1}L${x2} ${y2}"/>\n`;
+  xml += `    android:width="${vpW}dp"\n    android:height="${vpH}dp"\n`;
+  xml += `    android:viewportWidth="${vpW}"\n    android:viewportHeight="${vpH}">\n`;
+
+  items.forEach(it => {
+    const col = hexToAndroid(it.color);
+    if (it.type === 'dot') {
+      const x = +it.x.toFixed(2), y = +it.y.toFixed(2);
+      xml += `    <path\n        android:strokeColor="${col}"\n`;
+      xml += `        android:strokeWidth="${it.size || 60}"\n`;
+      xml += `        android:strokeLineCap="round"\n`;
+      xml += `        android:pathData="M${x} ${y}L${x} ${y}"/>\n`;
+    } else {
+      const x1=+it.x1.toFixed(2),y1=+it.y1.toFixed(2),x2=+it.x2.toFixed(2),y2=+it.y2.toFixed(2);
+      xml += `    <path\n        android:strokeColor="${col}"\n`;
+      xml += `        android:strokeWidth="${it.width || 20}"\n`;
+      xml += `        android:pathData="M${x1} ${y1}L${x2} ${y2}"/>\n`;
+    }
   });
   xml += `</vector>`;
   document.getElementById('xmlText').value = xml;
@@ -488,26 +733,33 @@ function exportXML() {
 }
 
 function copyXML() {
-  const ta = document.getElementById('xmlText');
-  ta.select();
+  const ta = document.getElementById('xmlText'); ta.select();
   document.execCommand('copy');
   alert('Đã copy XML!');
 }
-
 function closeXML() {
   document.getElementById('xmlOutput').style.display = 'none';
   document.getElementById('overlay').style.display = 'none';
 }
 
-// Keyboard shortcuts
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
-  if (e.ctrlKey && e.key === 'z') undo();
-  if (e.key === 'd') setMode('draw');
-  if (e.key === 's') setMode('select');
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+  if (e.key === 'l') setTool('draw');
+  if (e.key === 'p') setTool('dot');
+  if (e.key === 's') setTool('select');
+  if (e.key === 'e') setTool('eraser');
+  if (e.key === 'b') setTool('brush');
+  // Number keys 1-8 select preset
+  const n = parseInt(e.key);
+  if (n >= 1 && n <= PRESETS.length) selectPreset(PRESETS[n-1]);
 });
 
-// Init
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildPalette();
+updateActiveInfo();
 initCanvas();
 </script>
 </body>

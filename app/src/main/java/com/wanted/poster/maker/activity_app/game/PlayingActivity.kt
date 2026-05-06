@@ -16,9 +16,12 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
+
+
 class PlayingActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayingBinding
+    private lateinit var mapData: MapData
     private var isPaused = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,14 +32,17 @@ class PlayingActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         makeFullscreen()
 
-        val mapIndex      = intent.getIntExtra(ChooseNumberActivity.EXTRA_MAP, 1)
-        val killerIndex   = intent.getIntExtra(ChooseNumberActivity.EXTRA_KILLER, 1)
-        val playerNumber  = intent.getIntExtra(ChooseNumberActivity.EXTRA_SELECTED_NUMBER, -1)
-        val pathMode      = intent.getStringExtra(ChooseMapActivity.EXTRA_PATH_MODE)
-                           ?: ChooseMapActivity.PATH_MODE_ASTAR
+        val mapIndex     = intent.getIntExtra(ChooseNumberActivity.EXTRA_MAP, 1)
+        val killerIndex  = intent.getIntExtra(ChooseNumberActivity.EXTRA_KILLER, 1)
+        val playerNumber = intent.getIntExtra(ChooseNumberActivity.EXTRA_SELECTED_NUMBER, -1)
+        val pathMode     = intent.getStringExtra(ChooseMapActivity.EXTRA_PATH_MODE)
+                          ?: ChooseMapActivity.PATH_MODE_ASTAR
 
-        binding.mapNumberView.loadAssets(mapIndex, killerIndex)
+        mapData = MapLoader.load(this, mapIndex)
+
+        binding.mapNumberView.loadAssets(mapIndex, killerIndex, mapData.hiderSpawns)
         binding.mapNumberView.phase = MapNumberView.Phase.PLAYING
+        binding.mapNumberView.setDebugCollision(mapData.collisionBitmap)
         if (playerNumber != -1) binding.mapNumberView.highlightNumber(playerNumber)
 
         binding.btnBack.setOnClickListener { finish() }
@@ -44,9 +50,15 @@ class PlayingActivity : AppCompatActivity() {
             isPaused = !isPaused
             binding.btnPause.text = if (isPaused) "▶" else "⏸"
         }
-
         binding.btnReveal.setOnClickListener {
             startReveal(mapIndex, playerNumber, pathMode)
+        }
+
+        // Debug: tap góc trên-phải để bật/tắt collision overlay
+        binding.mapNumberView.setOnLongClickListener {
+            binding.mapNumberView.showDebugCollision = !binding.mapNumberView.showDebugCollision
+            binding.mapNumberView.invalidate()
+            true
         }
     }
 
@@ -56,7 +68,8 @@ class PlayingActivity : AppCompatActivity() {
         binding.mapNumberView.clearGameState()
         binding.mapNumberView.highlightNumber(playerNumber)
 
-        val shuffled = (1..12).shuffled()
+        val roomCount = mapData.hiderSpawns.size.coerceAtLeast(1)
+        val shuffled = (1..roomCount).shuffled()
         val playerIdx = shuffled.indexOf(playerNumber)
         val caught = playerIdx < 11
         // If caught: animate until killer reaches player's room; else: animate through 11 rooms
@@ -64,13 +77,13 @@ class PlayingActivity : AppCompatActivity() {
                            else        shuffled.subList(0, 11)
 
         lifecycleScope.launch {
-            var currentPos = PointF(0.46f, 0.38f)
+            var currentPos = mapData.killerSpawn
             val accumulatedTrail = mutableListOf<PointF>()
 
             for (room in roomsToVisit) {
                 binding.tvStatus.text = "Killer entering room $room…"
                 val from = currentPos
-                val path = withContext(Dispatchers.IO) { computePath(mapIndex, from, room, pathMode) }
+                val path = withContext(Dispatchers.IO) { computePath(from, room, pathMode) }
 
                 // Accumulate trail (skip duplicate start point after first segment)
                 if (accumulatedTrail.isEmpty()) accumulatedTrail.addAll(path)
@@ -92,23 +105,20 @@ class PlayingActivity : AppCompatActivity() {
         }
     }
 
-    private fun computePath(mapIndex: Int, fromPos: PointF, targetRoom: Int, pathMode: String): List<PointF> {
-        val target = MapNumberView.defaultPositionsForMap1()[targetRoom]
-            ?: return listOf(fromPos)
+    private fun computePath(fromPos: PointF, targetRoom: Int, pathMode: String): List<PointF> {
+        val target = mapData.hiderSpawns.getOrNull(targetRoom - 1) ?: return listOf(fromPos)
 
         return when (pathMode) {
             ChooseMapActivity.PATH_MODE_ASTAR -> {
                 try {
-                    val raw = assets.open("Map/${mapIndex}_collision.png")
-                        .use { BitmapFactory.decodeStream(it) }
-                    val result = KillerPathfinder(raw).findPath(fromPos.x, fromPos.y, target.x, target.y)
-                    raw.recycle()
+                    val result = KillerPathfinder(mapData.collisionBitmap)
+                        .findPath(fromPos.x, fromPos.y, target.x, target.y)
                     result.ifEmpty { listOf(fromPos, target) }
                 } catch (_: Exception) {
                     listOf(fromPos, target)
                 }
             }
-            else -> listOf(fromPos, target)  // Waypoints = direct line between rooms
+            else -> listOf(fromPos, target)
         }
     }
 

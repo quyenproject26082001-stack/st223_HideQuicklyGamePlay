@@ -24,6 +24,9 @@ class GameActivity : AppCompatActivity() {
             or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         )
 
+        val mapIndex = intent.getIntExtra(ChooseNumberActivity.EXTRA_MAP, 1)
+        binding.gameView.setMapIndex(mapIndex)
+
         binding.btnDebug.setOnClickListener {
             binding.gameView.toggleDebug()
             binding.btnDebug.text = if (binding.gameView.showDebug) "Debug ON" else "Debug OFF"

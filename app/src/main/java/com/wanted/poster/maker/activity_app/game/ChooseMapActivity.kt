@@ -20,11 +20,9 @@ class ChooseMapActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityChooseMapBinding
 
-    // Demo: Map 1 with two approaches side-by-side
-    private val demoOptions = listOf(
-        MapOption(mapIndex = 1, pathMode = PATH_MODE_ASTAR,     label = "Map 1",  approachLabel = "A* Path",    approachColor = "#4CAF50"),
-        MapOption(mapIndex = 1, pathMode = PATH_MODE_WAYPOINTS, label = "Map 1",  approachLabel = "Waypoints",  approachColor = "#FF9800"),
-    )
+    private val mapOptions: List<MapOption> by lazy {
+        (1..47).map { i -> MapOption(mapIndex = i, pathMode = PATH_MODE_ASTAR, label = "Map $i") }
+    }
 
     private var selectedOption: MapOption? = null
 
@@ -35,11 +33,11 @@ class ChooseMapActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         makeFullscreen()
 
-        val adapter = MapOptionAdapter(this, demoOptions) { option ->
+        val adapter = MapOptionAdapter(this, mapOptions) { option ->
             selectedOption = option
             binding.btnSelect.isEnabled = true
             binding.btnSelect.alpha = 1f
-            binding.btnSelect.text = "SELECT  [${option.approachLabel}]"
+            binding.btnSelect.text = "SELECT  ${option.label}"
         }
 
         binding.rvMaps.layoutManager = GridLayoutManager(this, 2)
@@ -73,9 +71,7 @@ class ChooseMapActivity : AppCompatActivity() {
     data class MapOption(
         val mapIndex: Int,
         val pathMode: String,
-        val label: String,
-        val approachLabel: String,
-        val approachColor: String
+        val label: String
     )
 
     class MapOptionAdapter(
@@ -107,8 +103,7 @@ class ChooseMapActivity : AppCompatActivity() {
             } catch (_: Exception) {}
 
             holder.tvLabel.text = opt.label
-            holder.tvApproach.text = opt.approachLabel
-            holder.tvApproach.setBackgroundColor(android.graphics.Color.parseColor(opt.approachColor + "CC"))
+            holder.tvApproach.visibility = View.GONE
 
             val isSelected = selectedPos == position
             holder.viewSelected.visibility = if (isSelected) View.VISIBLE else View.GONE

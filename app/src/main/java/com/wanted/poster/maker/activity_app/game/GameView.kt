@@ -7,28 +7,26 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import kotlin.math.sqrt
+import kotlin.math.min
 
 class GameView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : SurfaceView(context, attrs), SurfaceHolder.Callback {
 
     private var gameThread: GameThread? = null
+    private var mapIndex = 1
 
     private lateinit var mapBitmap: Bitmap
     private lateinit var collisionBitmap: Bitmap
     private var debugBitmap: Bitmap? = null
-    // Killer = người chơi điều khiển, hiders = người trốn
-    // Vị trí normalized khớp với spawn points (chấm xanh) trong 1_collision.png
-    val killer = Player(x = 0.30f, y = 0.27f, isKiller = true, name = "Killer")
-    val hiders = listOf(
-        Player(x = 0.14f, y = 0.46f, name = "Player 1"),  // phòng 1 trái
-        Player(x = 0.14f, y = 0.66f, name = "Player 2"),  // phòng 2 trái
-        Player(x = 0.74f, y = 0.61f, name = "Player 3")   // nhà tắm phải
-    )
 
-    // Điểm đích khi tap
-    private var targetX = killer.x
-    private var targetY = killer.y
+    lateinit var killer: Player
+        private set
+    var hiders: List<Player> = emptyList()
+        private set
+
+    private var targetX = 0.5f
+    private var targetY = 0.5f
 
     var showDebug = false
 
@@ -82,6 +80,10 @@ class GameView @JvmOverloads constructor(
         isFocusable = true
     }
 
+    fun setMapIndex(index: Int) {
+        mapIndex = index
+    }
+
     override fun surfaceCreated(h: SurfaceHolder) {
         loadAssets()
         gameThread = GameThread(h, this).apply { start() }
@@ -97,25 +99,28 @@ class GameView @JvmOverloads constructor(
     }
 
     private fun loadAssets() {
-        mapBitmap = context.assets.open("Map/1.jpg").use { BitmapFactory.decodeStream(it) }
-        collisionBitmap = loadCollisionBitmap()
-    }
+        mapBitmap = context.assets.open("Map/$mapIndex.jpg").use { BitmapFactory.decodeStream(it) }
 
-    // Load collision PNG từ assets (Đen=tường, Trắng=đi được, Đỏ=cửa, Xanh=spawn)
-    private fun loadCollisionBitmap(): Bitmap {
-        return try {
-            context.assets.open("Map/1_collision.png").use {
-                BitmapFactory.decodeStream(it).also { bmp ->
-                    // Đảm bảo format ARGB_8888 để getPixel() hoạt động đúng
-                    if (bmp.config != Bitmap.Config.ARGB_8888) {
-                        return bmp.copy(Bitmap.Config.ARGB_8888, false)
-                    }
-                }
+        val mapData = MapLoader.load(context, mapIndex)
+        collisionBitmap = mapData.collisionBitmap
+
+        // Killer spawn từ XML (chấm xanh lá)
+        killer = Player(
+            x = mapData.killerSpawn.x,
+            y = mapData.killerSpawn.y,
+            isKiller = true,
+            name = "Killer"
+        )
+        targetX = killer.x
+        targetY = killer.y
+
+        // Hider spawns từ XML (chấm xanh dương) — lấy tối đa 3
+        hiders = mapData.hiderSpawns
+            .take(3)
+            .mapIndexed { i, p -> Player(x = p.x, y = p.y, name = "Player ${i + 1}") }
+            .ifEmpty {
+                listOf(Player(x = 0.14f, y = 0.46f, name = "Player 1"))
             }
-        } catch (e: Exception) {
-            // Fallback: tạo bitmap trống nếu file không tồn tại
-            Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
-        }
     }
 
     // Kiểm tra 1 pixel (normalized) có phải tường không
@@ -123,7 +128,10 @@ class GameView @JvmOverloads constructor(
         if (!::collisionBitmap.isInitialized) return true
         val bx = (nx * collisionBitmap.width).toInt().coerceIn(0, collisionBitmap.width - 1)
         val by = (ny * collisionBitmap.height).toInt().coerceIn(0, collisionBitmap.height - 1)
-        return collisionBitmap.getPixel(bx, by) != Color.BLACK
+        val px = collisionBitmap.getPixel(bx, by)
+        if (Color.alpha(px) < 80) return true
+        val r = Color.red(px); val g = Color.green(px); val b = Color.blue(px)
+        return r > 80 || g > 80 || b > 80
     }
 
     // Kiểm tra toàn bộ vùng nhân vật (trung tâm + 4 điểm rìa theo bán kính)
