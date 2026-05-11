@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:background="@android:color/transparent"
     android:layout_height="wrap_content"
+    tools:background="@color/gntRed"
     android:layout_marginBottom="16dp">
 
     <!--    Container with stroke background -->
@@ -12,9 +13,9 @@
         android:id="@+id/imvFocus"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/bg_100_stroke_white"
+        android:background="@drawable/frame_lang_uslt"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="328:56"
+        app:layout_constraintDimensionRatio="328:68"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -30,8 +31,9 @@
                 android:id="@+id/imvFlag"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginVertical="12dp"
-                android:layout_marginStart="20dp"
+                android:layout_marginBottom="25dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginStart="37dp"
                 android:src="@drawable/ic_flag_english"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1:1"
@@ -39,33 +41,27 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <!--            tvLang-->
-            <TextView
+            <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
                 android:id="@+id/tvLang"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:fontFamily="@font/roboto_regular"
+                android:fontFamily="@font/tradewinds_regular"
                 android:gravity="start"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textSize="20sp"
+                tools:text="English"
+                android:shadowDy="7"
+                android:shadowColor="#80000000"
+                android:shadowRadius="6"
+                app:outerStrokeWidth="2dp"
+                app:outerStrokeColor="@color/black"
                 app:layout_constraintBottom_toBottomOf="@+id/imvFlag"
-                app:layout_constraintEnd_toStartOf="@+id/btnRadio"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/imvFlag"
                 app:layout_constraintTop_toTopOf="@+id/imvFlag" />
 
-            <!--            btnRadio-->
-            <ImageView
-                android:id="@+id/btnRadio"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginVertical="2dp"
-                android:src="@drawable/ic_tick_lang"
-                android:scaleType="fitXY"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintDimensionRatio="1:1"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

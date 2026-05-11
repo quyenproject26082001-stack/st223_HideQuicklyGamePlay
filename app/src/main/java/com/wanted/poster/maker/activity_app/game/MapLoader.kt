@@ -10,10 +10,7 @@ import org.xmlpull.v1.XmlPullParser
 
 object MapLoader {
 
-    private const val VIEWPORT_W = 1997f
-    private const val VIEWPORT_H = 3258f
-    private const val BITMAP_W   = 400
-    private const val BITMAP_H   = 653
+    private const val BITMAP_MAX = 600  // cạnh dài nhất của collision bitmap
 
     private val COLOR_KILLER  = Color.parseColor("#FF00FF00")
     private val COLOR_HIDER   = Color.parseColor("#FF0080FF")
@@ -29,17 +26,20 @@ object MapLoader {
         val resId = context.resources.getIdentifier(
             "map$mapIndex", "drawable", context.packageName
         )
-        if (resId == 0) return fallback(context, mapIndex)
+        if (resId == 0) return fallback(context)
+
+        val (vpW, vpH) = parseViewport(context, resId)
+        val (bmpW, bmpH) = computeBitmapSize(vpW, vpH)
 
         val killerSpawns = mutableListOf<PointF>()
         val hiderSpawns  = mutableListOf<PointF>()
         val rooms        = mutableListOf<RoomInfo>()
 
-        parseXmlDots(context, resId, killerSpawns, hiderSpawns, rooms)
+        parseXmlDots(context, resId, vpW, vpH, killerSpawns, hiderSpawns, rooms)
 
-        val bitmap = renderToBitmap(context, resId)
+        val bitmap = renderToBitmap(context, resId, bmpW, bmpH)
 
-        android.util.Log.d("MapLoader", "map$mapIndex → killer=${killerSpawns.size} hider=${hiderSpawns.size} rooms=${rooms.size}")
+        android.util.Log.d("MapLoader", "map$mapIndex vp=${vpW}x${vpH} bmp=${bmpW}x${bmpH} killer=${killerSpawns.size} hider=${hiderSpawns.size} rooms=${rooms.size}")
 
         return MapData(
             collisionBitmap = bitmap,
@@ -49,9 +49,48 @@ object MapLoader {
         )
     }
 
+    // Đọc viewportWidth/Height từ thẻ <vector>
+    private fun parseViewport(context: Context, resId: Int): Pair<Float, Float> {
+        var vpW = 1000f
+        var vpH = 1000f
+        val parser = context.resources.getXml(resId)
+        try {
+            var event = parser.eventType
+            while (event != XmlPullParser.END_DOCUMENT) {
+                if (event == XmlPullParser.START_TAG && parser.name == "vector") {
+                    for (i in 0 until parser.attributeCount) {
+                        val name  = parser.getAttributeName(i)
+                        val value = parser.getAttributeValue(i)
+                        when {
+                            name.endsWith("viewportWidth")  -> vpW = value.toFloatOrNull() ?: vpW
+                            name.endsWith("viewportHeight") -> vpH = value.toFloatOrNull() ?: vpH
+                        }
+                    }
+                    break
+                }
+                event = parser.next()
+            }
+        } catch (_: Exception) {
+        } finally {
+            parser.close()
+        }
+        return vpW to vpH
+    }
+
+    // Giữ đúng tỉ lệ, cạnh dài nhất = BITMAP_MAX
+    private fun computeBitmapSize(vpW: Float, vpH: Float): Pair<Int, Int> {
+        return if (vpW >= vpH) {
+            BITMAP_MAX to (BITMAP_MAX * vpH / vpW).toInt().coerceAtLeast(1)
+        } else {
+            (BITMAP_MAX * vpW / vpH).toInt().coerceAtLeast(1) to BITMAP_MAX
+        }
+    }
+
     private fun parseXmlDots(
         context: Context,
         resId: Int,
+        vpW: Float,
+        vpH: Float,
         killerSpawns: MutableList<PointF>,
         hiderSpawns: MutableList<PointF>,
         rooms: MutableList<RoomInfo>
@@ -61,26 +100,24 @@ object MapLoader {
             var event = parser.eventType
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG && parser.name == "path") {
-                    var colorInt  = 0
-                    var pathData  = ""
-                    var isRound   = false
+                    var colorInt = 0
+                    var pathData = ""
+                    var isRound  = false
 
-                    // Đọc attributes theo index để tránh vấn đề namespace binary XML
                     for (i in 0 until parser.attributeCount) {
                         val name  = parser.getAttributeName(i)
                         val value = parser.getAttributeValue(i)
                         when {
-                            name.endsWith("strokeColor")  -> colorInt  = parseColor(value)
-                            name.endsWith("pathData")     -> pathData  = value
+                            name.endsWith("strokeColor")   -> colorInt = parseColor(value)
+                            name.endsWith("pathData")      -> pathData = value
                             name.endsWith("strokeLineCap") -> isRound  = (value == "round" || value == "1")
                         }
                     }
 
-                    // Chỉ xử lý chấm tròn (dot marker)
                     if (isRound && pathData.isNotEmpty()) {
                         val match = dotPattern.find(pathData) ?: run { event = parser.next(); continue }
-                        val nx = match.groupValues[1].toFloat() / VIEWPORT_W
-                        val ny = match.groupValues[2].toFloat() / VIEWPORT_H
+                        val nx = match.groupValues[1].toFloat() / vpW
+                        val ny = match.groupValues[2].toFloat() / vpH
                         val pos = PointF(nx, ny)
 
                         when (colorInt) {
@@ -102,7 +139,6 @@ object MapLoader {
         }
     }
 
-    // Xử lý cả "#AARRGGBB" lẫn integer string từ binary XML
     private fun parseColor(value: String): Int {
         return when {
             value.startsWith("#") -> try { Color.parseColor(value) } catch (_: Exception) { 0 }
@@ -110,22 +146,21 @@ object MapLoader {
         }
     }
 
-    private fun renderToBitmap(context: Context, resId: Int): Bitmap {
+    private fun renderToBitmap(context: Context, resId: Int, bmpW: Int, bmpH: Int): Bitmap {
         return try {
             val drawable = AppCompatResources.getDrawable(context, resId)
-                ?: return Bitmap.createBitmap(BITMAP_W, BITMAP_H, Bitmap.Config.ARGB_8888)
-            val bmp = Bitmap.createBitmap(BITMAP_W, BITMAP_H, Bitmap.Config.ARGB_8888)
-            drawable.setBounds(0, 0, BITMAP_W, BITMAP_H)
+                ?: return Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+            val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+            drawable.setBounds(0, 0, bmpW, bmpH)
             drawable.draw(Canvas(bmp))
             bmp
         } catch (_: Exception) {
-            Bitmap.createBitmap(BITMAP_W, BITMAP_H, Bitmap.Config.ARGB_8888)
+            Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
         }
     }
 
-    // Fallback nếu không có XML: trả về MapData rỗng có thể chơi được
-    private fun fallback(context: Context, mapIndex: Int): MapData {
-        val empty = Bitmap.createBitmap(BITMAP_W, BITMAP_H, Bitmap.Config.ARGB_8888)
+    private fun fallback(context: Context): MapData {
+        val empty = Bitmap.createBitmap(BITMAP_MAX, BITMAP_MAX, Bitmap.Config.ARGB_8888)
         return MapData(
             collisionBitmap = empty,
             killerSpawn     = PointF(0.46f, 0.38f),

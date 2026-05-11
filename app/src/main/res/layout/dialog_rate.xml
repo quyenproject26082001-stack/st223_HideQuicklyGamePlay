@@ -11,7 +11,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
-            android:background="@drawable/bg_16_stroke_gradient_solid_black">
+            android:background="@drawable/bg_dialog_rate">
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/imvAvtRate"
@@ -32,7 +32,7 @@
                 android:freezesText="true"
                 android:gravity="center"
                 android:text="@string/zero_star_title"
-                android:textColor="#000000"
+                android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -42,11 +42,11 @@
                 android:id="@+id/tv2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat_medium"
+                android:fontFamily="@font/roboto_regular"
                 android:freezesText="true"
                 android:gravity="center"
                 android:text="@string/zero_star"
-                android:textColor="#000000"
+                android:textColor="#99242424"
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -86,26 +86,25 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/ll1">
 
-                <androidx.cardview.widget.CardView
+                <FrameLayout
                     android:id="@+id/btnVote"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="20dp"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp">
+                    android:background="@drawable/bg_btn_dialog_rate"
+                   >
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_gravity="center"
-                        android:background="@drawable/bg_gradient"
                         android:fontFamily="@font/roboto_medium"
                         android:gravity="center"
                         android:text="@string/rate"
                         android:textAllCaps="false"
-                        android:textColor="@color/white"
+                        android:textColor="@color/black"
                         android:textSize="16sp" />
-                </androidx.cardview.widget.CardView>
+                </FrameLayout>
 
                 <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/btnCancel"
@@ -116,7 +115,7 @@
                     android:paddingVertical="15dp"
                     android:text="@string/exit"
                     android:textAllCaps="false"
-                    android:textColor="#363636"
+                    android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>

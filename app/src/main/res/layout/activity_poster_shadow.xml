@@ -106,7 +106,7 @@
                         android:id="@+id/tvPosterShadowLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/joan_regular"
+                        android:fontFamily="@font/tradewinds_regular"
                         android:text="@string/shadow"
                         android:textColor="@color/app"
                         android:textSize="16sp"

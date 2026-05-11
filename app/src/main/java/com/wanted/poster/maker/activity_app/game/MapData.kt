@@ -12,10 +12,10 @@ data class MapData(
 
 data class RoomInfo(val position: PointF, val type: RoomType)
 
-enum class RoomType(val soundFolder: String) {
-    BEDROOM("âm thanh phòng ngủ"),
-    BATHROOM("âm thanh phòng tắm"),
-    TOILET("âm thanh nhà vệ sinh"),
-    KITCHEN("âm thanh phòng bếp"),
-    LIVING("âm thanh phòng khách")
+enum class RoomType(val assetFile: String) {
+    BEDROOM ("sounds/bedroom.mp3"),
+    BATHROOM("sounds/bathroom.mp3"),
+    TOILET  ("sounds/toilet.mp3"),
+    KITCHEN ("sounds/kitchen.mp3"),
+    LIVING  ("sounds/living.mp3")
 }

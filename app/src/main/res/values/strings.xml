@@ -5,16 +5,16 @@
     <string name="this_action_can_contain_ads">This action can contain ads</string>
     <string name="not_select_lang">Please select a language</string>
     <string name="next">Next</string>
-    <string name="language">Language</string>
+    <string name="language">\u00a0Language\u00a0</string>
 
-    <string name="title_1">Make A Wanted Poster</string>
-    <string name="title_2">Bounty Filter</string>
-    <string name="title_3">Diverse Templates</string>
+    <string name="title_1">WELCOME TO THE GAME OF \nSURVIVAL.</string>
+    <string name="title_2">CHOOSE WISELY... ONE WRONG MOVE \nAND YOUR\'RE OUT</string>
+    <string name="title_3">STAY ALIVE UNTIL THE END TO WIN</string>
 
     <string name="permission">Permission</string>
-    <string name="storage">Storage</string>
-    <string name="continue_per">Continue</string>
-    <string name="notification">Notification</string>
+    <string name="storage">\u00a0Storage\u00a0</string>
+    <string name="continue_per">\u00a0Continue\u00a0</string>
+    <string name="notification">\u00a0Notification\u00a0</string>
     <string name="granted_notification">Notification permission granted</string>
     <string name="granted_storage">Storage permission granted</string>
     <string name="allow">Allow</string>
@@ -22,9 +22,9 @@
     <string name="to_access_13">to access notification on your device</string>
     <string name="no_designs_yet">You don’t have any poster</string>
 
-    <string name="rate_us">Rate Us</string>
-    <string name="share_app">Share App</string>
-    <string name="privacy_policy"><![CDATA[Privacy & Policy]]></string>
+    <string name="rate_us">\u00a0Rate Us</string>
+    <string name="share_app">\u00a0Share App</string>
+    <string name="privacy_policy"><![CDATA[\u00a0Privacy & Policy]]></string>
 
     <string name="zero_star_title">Do you like the app?</string>
     <string name="zero_star">Let us know your experience</string>
@@ -119,7 +119,8 @@
     <string name="edit">Edit</string>
     <string name="add_sticker">Add Sticker</string>
     <string name="vui_l_ng_nh_p_t_n_tr_c_khi_l_u">Please enter a name before save</string>
-    <string name="bountyFilter">Bounty \nFilter</string>    <string name="play">Play</string>
+    <string name="bountyFilter">Bounty \nFilter</string>
+    <string name="play">Play</string>
     <string name="old_west">Old West \nOutlaws</string>
     <string name="old_west_outlwaw">Old West OutLaw</string>
     <string name="camera_permission_is_required">Camera permission is required</string>
@@ -127,6 +128,6 @@
     <string name="saved_to_my_design">Saved to My Design!</string>
     <string name="template">Templates</string>
     <string name="my_filter">My Filter</string>
-    <string name="multi_player">MULTI PLAYER</string>
+    <string name="multi_player">\u00a0MULTI PLAYER\u00a0</string>
     <string name="single_player">SINGLE PLAYER</string>
 </resources>

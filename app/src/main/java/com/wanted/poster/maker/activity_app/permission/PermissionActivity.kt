@@ -1,31 +1,27 @@
     package com.wanted.poster.maker.activity_app.permission
 
-    import android.content.pm.PackageManager
-    import android.os.Build
-    import android.text.TextUtils
-    import android.util.Log
-    import android.view.LayoutInflater
-    import androidx.activity.viewModels
-    import androidx.core.graphics.toColorInt
-    import androidx.lifecycle.Lifecycle
-    import androidx.lifecycle.lifecycleScope
-    import androidx.lifecycle.repeatOnLifecycle
-    import com.wanted.poster.maker.R
-    import com.wanted.poster.maker.core.base.BaseActivity
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import android.view.LayoutInflater
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.wanted.poster.maker.R
+import com.wanted.poster.maker.core.base.BaseActivity
     import com.wanted.poster.maker.core.extensions.checkPermissions
     import com.wanted.poster.maker.core.extensions.goToSettings
     import com.wanted.poster.maker.core.extensions.gone
-    import com.wanted.poster.maker.core.extensions.requestPermission
-    import com.wanted.poster.maker.core.extensions.select
-    import com.wanted.poster.maker.core.extensions.showToast
-    import com.wanted.poster.maker.core.extensions.startIntentRightToLeft
-    import com.wanted.poster.maker.core.extensions.visible
-    import com.wanted.poster.maker.core.helper.StringHelper
-    import com.wanted.poster.maker.core.utils.key.RequestKey
-    import com.wanted.poster.maker.databinding.ActivityPermissionBinding
-    import com.wanted.poster.maker.activity_app.main.MainActivity
-    import com.wanted.poster.maker.core.extensions.setGradientTextHeightColor
-    import com.wanted.poster.maker.core.extensions.setOnSingleClick
+import com.wanted.poster.maker.core.extensions.requestPermission
+import com.wanted.poster.maker.core.extensions.select
+import com.wanted.poster.maker.core.extensions.showToast
+import com.wanted.poster.maker.core.extensions.startIntentRightToLeft
+import com.wanted.poster.maker.core.extensions.visible
+import com.wanted.poster.maker.core.utils.key.RequestKey
+import com.wanted.poster.maker.databinding.ActivityPermissionBinding
+import com.wanted.poster.maker.activity_app.main.MainActivity
+import com.wanted.poster.maker.core.extensions.setOnSingleClick
     //quyen
     import com.google.android.gms.ads.interstitial.InterstitialAd
     import com.lvt.ads.callback.InterCallback
@@ -62,17 +58,11 @@
 
         override fun initText() {
             binding.actionBar.tvCenter.select()
-            setGradientTextHeightColor(binding.tvContinue, "#FFFFFF".toColorInt(), "#FFFFFF".toColorInt())
             val textRes =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) R.string.to_access_13 else R.string.to_access
 
-            binding.txtPer.text = TextUtils.concat(
-                createColoredText(R.string.allow, R.color.white),
-                " ",
-                createColoredText(R.string.app_name, R.color.white),
-                " ",
-                createColoredText(textRes, R.color.white)
-            )
+            binding.txtPer.text =
+                "${getString(R.string.allow)} ${getString(R.string.app_name)} ${getString(textRes)}"
         }
 
         override fun viewListener() {
@@ -175,17 +165,11 @@
         //quyen
 
         override fun initActionBar() {
-            binding.actionBar.tvCenter.apply {
-                text = getString(R.string.permission)
-                gone()
+            binding.actionBar.apply {
+                tvCenter.text = getString(R.string.permission)
+                tvStart.visible()
             }
         }
-
-        private fun createColoredText(
-            @androidx.annotation.StringRes textRes: Int,
-            @androidx.annotation.ColorRes colorRes: Int,
-            font: Int = R.font.joan_regular
-        ) = StringHelper.changeColor(this, getString(textRes), colorRes, font)
 
         private fun handleContinue() {
             //quyen

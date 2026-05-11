@@ -3,14 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="100dp"
+    tools:background="@color/gntRed"
     xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/transparent">
 
     <!--    btnActionBarLeft-->
     <ImageView
         android:id="@+id/btnActionBarLeft"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="10dp"
         android:background="?attr/selectableItemBackgroundBorderless"
@@ -21,8 +22,8 @@
     <!--    cvLogo-->
     <androidx.cardview.widget.CardView
         android:id="@+id/cvLogo"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="10dp"
         android:background="?attr/selectableItemBackgroundBorderless"
@@ -37,8 +38,8 @@
     
     <ImageView
         android:id="@+id/btnActionBarReset"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:src="@drawable/ic_reset"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,36 +47,80 @@
         app:layout_constraintBottom_toBottomOf="@id/btnActionBarLeft"
         app:layout_constraintTop_toTopOf="@id/btnActionBarLeft"/>
 
+
+    <ImageView
+        android:id="@+id/tvStartBlur"
+        android:layout_width="0sp"
+        android:layout_height="80dp"
+        android:src="@drawable/blur_img"
+        android:scaleType="fitXY"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_marginStart="-50dp"
+        android:layout_marginEnd="60dp"
+        app:layout_constraintTop_toTopOf="@id/tvStart"
+        app:layout_constraintBottom_toBottomOf="@id/tvStart"
+        app:layout_constraintStart_toStartOf="@id/tvStart"
+        app:layout_constraintEnd_toEndOf="@id/tvStart"
+        />
     <!--    tvStart-->
-    <TextView
+    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvStart"
         style="@style/single_marquee"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:fontFamily="@font/joan_regular"
+        android:fontFamily="@font/tradewinds_regular"
         android:gravity="start|bottom"
         android:text="@string/language"
         android:textColor="@color/white"
+        android:shadowDy="7"
+        android:shadowColor="#80000000"
+        android:shadowRadius="6"
+        app:outerStrokeColor="@color/black"
+        app:outerStrokeWidth="2dp"
         android:textSize="24sp"
         android:visibility="gone"
+        tools:visibility="visible"
         app:layout_constraintBottom_toBottomOf="@+id/btnActionBarLeft"
         app:layout_constraintEnd_toStartOf="@+id/btnActionBarRight"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnActionBarLeft" />
 
+
+
+    <ImageView
+        android:id="@+id/tvCenterBlur"
+        android:layout_width="00dp"
+        android:layout_height="80dp"
+        android:src="@drawable/blur_img"
+        android:scaleType="fitXY"
+        android:visibility="gone"
+        android:layout_marginEnd="-20dp"
+        tools:visibility="visible"
+        android:layout_marginStart="-20dp"
+        app:layout_constraintTop_toTopOf="@id/tvCenter"
+        app:layout_constraintBottom_toBottomOf="@id/tvCenter"
+        app:layout_constraintStart_toStartOf="@id/tvCenter"
+        app:layout_constraintEnd_toEndOf="@id/tvCenter"
+        />
     <!--    tvCenter-->
-    <TextView
+    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvCenter"
         style="@style/single_marquee"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="90dp"
-        android:fontFamily="@font/joan_regular"
+        android:fontFamily="@font/tradewinds_regular"
         android:gravity="center"
         android:text="@string/language"
         android:textColor="@color/white"
         android:textSize="24sp"
+        app:outerStrokeWidth="2dp"
+        app:outerStrokeColor="@color/black"
+        android:shadowDy="7"
+        android:shadowColor="#80000000"
+        android:shadowRadius="6"
         tools:visibility="visible"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/btnActionBarLeft"
@@ -83,11 +128,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnActionBarLeft" />
 
+
+
     <!--    btnActionBarNextToRight-->
     <ImageView
         android:id="@+id/btnActionBarNextToRight"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="10dp"
         android:background="@drawable/ic_edit"
@@ -98,8 +145,8 @@
     <!--    btnActionBarRight-->
     <ImageView
         android:id="@+id/btnActionBarRight"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="10dp"
         android:visibility="invisible"
@@ -121,7 +168,7 @@
     <FrameLayout
         android:id="@+id/btnActionBarRightText"
         android:layout_width="49dp"
-        android:layout_height="32dp"
+        android:layout_height="38dp"
         android:maxWidth="50dp"
         android:minWidth="49dp"
         android:layout_marginEnd="16dp"

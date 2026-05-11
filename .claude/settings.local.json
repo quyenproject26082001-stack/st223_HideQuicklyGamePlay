@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:www.figma.com)",
       "PowerShell(Get-Command *)",
-      "PowerShell(Get-ChildItem *)"
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\\\\app\\\\src\\\\main\\\\assets\\\\Map\\\\1.jpg\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "PowerShell(Test-Path *)"
     ]
   }
 }

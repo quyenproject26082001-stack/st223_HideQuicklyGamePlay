@@ -23,11 +23,11 @@ class LanguageAdapter(val context: Context) : BaseAdapter<LanguageModel, ItemLan
             tvLang.text = item.name
 
             if (item.activate) {
-                loadImageGlide(root, R.drawable.ic_tick_lang, btnRadio, false)
+                //loadImageGlide(root, R.drawable.ic_tick_lang, btnRadio, false)
                 imvFocus.setBackgroundResource(R.drawable.frame_language_slt)
             } else {
-                loadImageGlide(root, R.drawable.ic_not_tick_lang, btnRadio, false)
-                imvFocus.setBackgroundResource(R.drawable.bg_100_stroke_white)
+                //loadImageGlide(root, R.drawable.ic_not_tick_lang, btnRadio, false)
+                imvFocus.setBackgroundResource(R.drawable.frame_lang_uslt)
             }
 
             root.setOnSingleClick {

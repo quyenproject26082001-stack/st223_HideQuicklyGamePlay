@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/img_bg_app"
+    android:clipChildren="false"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/layoutActionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        >
+        <include
+            android:id="@+id/actionBar"
+            layout="@layout/layout_actionbar"/>
+    </FrameLayout>
+
+
+    <FrameLayout
+        android:id="@+id/containerShowKiller"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:background="@drawable/bg_choose_killer"
+        app:layout_constraintTop_toBottomOf="@id/layoutActionBar"
+        android:layout_marginTop="30dp"
+        android:layout_marginHorizontal="25dp"
+        >
+        <ImageView
+            android:id="@+id/ivKillerShow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:src="@drawable/img_home_0"/>
+
+        <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+            android:id="@+id/tvNameChooseKiller"
+            android:layout_width="169dp"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_text_name_choosekiller"
+            android:layout_gravity="bottom|center"
+            android:layout_marginBottom="-20dp"
+            android:fontFamily="@font/tradewinds_regular"
+            android:textSize="20sp"
+            android:shadowDy="6"
+            android:shadowRadius="0.000001"
+            tools:text="Bubler DOom"
+            android:gravity="center"
+            android:textColor="@color/black"
+            android:shadowColor="#1A000000"
+            app:outerStrokeWidth="2dp"
+            app:outerStrokeColor="@color/white"
+            />
+    </FrameLayout>
+
+
+  <androidx.recyclerview.widget.RecyclerView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      app:layout_constraintTop_toBottomOf="@id/containerShowKiller"
+      android:layout_marginStart="15dp"
+      android:layout_marginEnd="10dp"
+      android:layout_marginTop="50dp"
+      app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+      android:orientation="horizontal"
+        android:scrollbars="horizontal"
+      />
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

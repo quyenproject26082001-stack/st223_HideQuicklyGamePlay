@@ -82,13 +82,16 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginHorizontal="40dp"
-                        android:fontFamily="@font/joan_regular"
+                        android:fontFamily="@font/tradewinds_regular"
                         android:gravity="center"
                         style="@style/single_marquee"
                         android:layout_gravity="center"
                         android:text="@string/single_player"
                         android:textColor="@color/white"
                         android:textSize="28sp"
+                        android:shadowDy="6"
+                        android:shadowColor="#80000000"
+                        android:shadowRadius="6"
                         app:outerStrokeColor="#000000"
                         app:outerStrokeWidth="2dp" />
 
@@ -133,11 +136,14 @@
                         android:id="@+id/tv1"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:fontFamily="@font/joan_regular"
+                        android:fontFamily="@font/tradewinds_regular"
                         android:gravity="center"
                         android:text="@string/multi_player"
                         android:textColor="@color/white"
                         android:textSize="28sp"
+                        android:shadowDy="6"
+                        android:shadowColor="#80000000"
+                        android:shadowRadius="6"
                         app:outerStrokeColor="#000000"
                         app:outerStrokeWidth="2dp" />
 

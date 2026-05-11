@@ -52,7 +52,7 @@ class SettingsActivity : BaseActivity<ActivitySettingsBinding>() {
         binding.actionBar.apply {
             tvCenter.text = strings(R.string.settings)
             tvCenter.visible()
-
+            tvCenterBlur.visible()
             btnActionBarLeft.setImageResource(R.drawable.ic_back)
             btnActionBarLeft.visible()
         }

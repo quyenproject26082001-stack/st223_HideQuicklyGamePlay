@@ -43,7 +43,7 @@
             <LinearLayout
                 android:id="@+id/btnLang"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="69dp"
                 android:background="@drawable/bg_settings"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -52,26 +52,33 @@
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="39dp"
                     android:layout_weight="1">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
+                        android:layout_marginBottom="3dp"
                         android:layout_gravity="center_vertical"
                         android:src="@drawable/ic_lang_set" />
                 </FrameLayout>
 
-                <TextView
+                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
                     android:layout_weight="8"
-                    android:fontFamily="@font/joan_regular"
+                    android:fontFamily="@font/tradewinds_regular"
                     android:gravity="center_vertical"
                     android:text="@string/language"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
+                    android:textSize="20sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="3dp"
+                    android:shadowColor="@color/black"
+                    android:shadowRadius="6"
+                    android:shadowDy="5"
+                    />
 
                 <FrameLayout
                     android:layout_width="0dp"
@@ -87,7 +94,7 @@
             <LinearLayout
                 android:id="@+id/btnRate"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="69dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_settings"
                 android:gravity="center_vertical"
@@ -97,27 +104,33 @@
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="39dp"
                     android:layout_weight="1">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
-                        android:layout_marginVertical="17dp"
+                        android:layout_marginBottom="3dp"
+
                         android:src="@drawable/ic_rate_set" />
                 </FrameLayout>
 
-                <TextView
+                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
                     android:layout_weight="8"
-                    android:fontFamily="@font/joan_regular"
+                    android:fontFamily="@font/tradewinds_regular"
                     android:gravity="center_vertical"
                     android:text="@string/rate_us"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
+                    android:textSize="20sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="3dp"
+                    android:shadowColor="@color/black"
+                    android:shadowRadius="6"
+                    android:shadowDy="5"/>
 
                 <FrameLayout
                     android:layout_width="0dp"
@@ -132,7 +145,7 @@
             <LinearLayout
                 android:id="@+id/btnShare"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="69dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_settings"
                 android:gravity="center_vertical"
@@ -142,27 +155,32 @@
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="39dp"
                     android:layout_weight="1">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
-                        android:layout_marginVertical="17dp"
+                        android:layout_marginBottom="3dp"
                         android:src="@drawable/ic_share_set" />
                 </FrameLayout>
 
-                <TextView
+                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
                     android:layout_weight="8"
-                    android:fontFamily="@font/joan_regular"
+                    android:fontFamily="@font/tradewinds_regular"
                     android:gravity="center_vertical"
                     android:text="@string/share_app"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
+                    android:textSize="20sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="3dp"
+                    android:shadowColor="@color/black"
+                    android:shadowRadius="6"
+                    android:shadowDy="5"/>
 
                 <FrameLayout
                     android:layout_width="0dp"
@@ -177,7 +195,7 @@
             <LinearLayout
                 android:id="@+id/btnPolicy"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="69dp"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_settings"
                 android:gravity="center_vertical"
@@ -187,27 +205,34 @@
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="39dp"
                     android:layout_weight="1">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
-                        android:layout_marginVertical="17dp"
+                        android:layout_marginBottom="3dp"
+
                         android:src="@drawable/ic_policy_set" />
                 </FrameLayout>
 
-                <TextView
+                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
                     android:layout_weight="8"
-                    android:fontFamily="@font/joan_regular"
+                    android:fontFamily="@font/tradewinds_regular"
                     android:gravity="center_vertical"
                     android:text="@string/privacy_policy"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
+                    android:textSize="20sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="3dp"
+                    android:shadowColor="@color/black"
+                    android:shadowRadius="6"
+                    android:shadowDy="5"
+                    />
 
                 <FrameLayout
                     android:layout_width="0dp"

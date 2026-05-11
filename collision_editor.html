@@ -94,7 +94,15 @@
 
   <!-- Map image -->
   <div class="section">
-    <label>Map Image</label>
+    <label>Map Image — <b id="mapLabel" style="color:#e94560">Map ?</b></label>
+    <div class="tool-row" style="margin-bottom:4px">
+      <button class="btn-mode" onclick="prevMap()" style="flex:0 0 36px">◀</button>
+      <button class="btn-mode" onclick="nextMap()" style="flex:1">▶ Next map</button>
+      <button class="btn-load" onclick="selectImgDir()" style="flex:0 0 36px" title="Chọn thư mục chứa ảnh map">📁</button>
+    </div>
+    <div id="imgDirInfo" style="font-size:10px;color:#aaa;margin:2px 0;display:none">
+      📂 <span id="imgDirName"></span>
+    </div>
     <input type="file" id="imgInput" accept="image/*" style="font-size:10px;color:#aaa;width:100%">
     <div style="margin-top:5px">
       <label>Opacity nền: <span id="opacVal">70</span>%</label>
@@ -166,8 +174,14 @@
   <!-- Load XML -->
   <div class="section">
     <label>Load / Import XML</label>
-    <button class="btn-load" onclick="loadDefaultXML()">📂 Load map1.xml mặc định</button>
-    <textarea id="xmlInput" placeholder="Hoặc paste XML vào đây..." style="width:100%;height:70px;margin-top:5px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#eee;font-size:10px;padding:4px"></textarea>
+    <button class="btn-load" onclick="selectXmlDir()" style="width:100%">📁 Chọn thư mục drawable...</button>
+    <div id="xmlDirInfo" style="font-size:10px;color:#aaa;margin:3px 0;display:none">
+      📂 <span id="xmlDirName"></span>
+    </div>
+    <input type="file" id="xmlFileInput" accept=".xml" style="display:none" onchange="loadXMLFile(this)">
+    <button class="btn-load" onclick="document.getElementById('xmlFileInput').click()" style="width:100%;margin-top:3px">📄 Chọn file XML bất kỳ...</button>
+    <button class="btn-load" onclick="loadDefaultXML()" style="width:100%;margin-top:3px">📂 Load map1.xml mặc định</button>
+    <textarea id="xmlInput" placeholder="Hoặc paste XML vào đây..." style="width:100%;height:60px;margin-top:5px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#eee;font-size:10px;padding:4px"></textarea>
     <button class="btn-load" onclick="parseXMLInput()" style="margin-top:3px;width:100%">⚙ Parse XML</button>
   </div>
 
@@ -187,7 +201,10 @@
     <div id="legend"></div>
   </div>
 
-  <button class="btn-export" onclick="exportXML()" style="width:100%">💾 Export Android XML</button>
+  <div class="tool-row">
+    <button class="btn-export" onclick="exportXML()" style="flex:1">👁 Preview XML</button>
+    <button class="btn-export" onclick="saveToDrawable()" style="flex:1;background:#1a6b40">💾 Lưu mapN.xml</button>
+  </div>
 
   <!-- Phím tắt -->
   <div class="section">
@@ -280,6 +297,9 @@ const ctx = canvas.getContext('2d');
 
 let vpW = 1997, vpH = 3258, scale = 1;
 let bgImg = null, bgOpacity = 0.7;
+let currentMapIndex = 1;
+let imgDirHandle = null;   // FileSystemDirectoryHandle cho thư mục ảnh
+let xmlDirHandle = null;   // FileSystemDirectoryHandle cho thư mục drawable
 let items = [];      // {type:'line'|'dot', ...}
 let selectedIdx = -1;
 let tool = 'draw';   // 'draw' | 'dot' | 'select'
@@ -304,8 +324,10 @@ window.addEventListener('resize', initCanvas);
 
 document.getElementById('imgInput').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
+  const m = f.name.match(/^(\d+)\./);
+  if (m) { currentMapIndex = parseInt(m[1]); updateMapLabel(); }
   bgImg = new Image();
-  bgImg.onload = render;
+  bgImg.onload = () => { applyImageViewport(bgImg); render(); };
   bgImg.src = URL.createObjectURL(f);
 });
 
@@ -639,28 +661,93 @@ const DEFAULT_XML = `<vector xmlns:android="http://schemas.android.com/apk/res/a
     android:height="3258dp"
     android:viewportWidth="1997"
     android:viewportHeight="3258">
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M14 931L14 20"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M875.06 903L0.06 908"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1151 1365L1151 898"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1151 2287L1151 1993"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M814.77 1420L36.48 1402.04"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M805 1689L805 1410"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M805 2227L805 1921"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1167 3234.23L1151 2556.23"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981 1375L1177 1375"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981 2297L1177 2297"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1981.14 1726L1177.14 1737"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M814.66 2236.99L23.66 2209.99"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M783.58 2598.99L5.58 2565.99"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M14 3257L14 1410"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1987 3257.1L1954 20.1"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M5.88 33L1963.88 10"/>
-    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M38.88 3247L1996.88 3224"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M145.88 302.57L1831.61 334.99"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1831.61 334.99L1842.42 3112.12"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1842.42 3117.52L140.48 3085.1"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M140.48 3085.1L124.27 286.36"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M140.48 961.73L897.99 969.71"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1057.93 971.39L1167.04 972.54"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1167.04 972.54L1168.36 1504.47"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1168.75 1661.75L1169.51 1964.65"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1169.89 2120.1L1170.48 2356.77"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1170.88 2516.73L1172.45 3149.94"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1177.85 1420.99L1858.63 1399.37"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1188.66 1745.16L1864.03 1761.37"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1167.04 2290.87L1858.63 2296.27"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M129.67 1431.79L893.92 1435.77"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1051 1436.59L1167.04 1437.19"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M821.25 1437.19L819.6 1778.64"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M818.83 1938.59L817.02 2313.53"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M816.25 2473.52L815.85 2555.61"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M821.25 2561.01L145.88 2588.03"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M805.04 2555.61L925.27 2557.35"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M1084.39 2559.66L1177.85 2561.01"/>
+    <path android:strokeColor="#FF000000" android:strokeWidth="20" android:pathData="M135.07 2253.04L815.85 2247.64"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M956.33 994.15L956.33 994.15"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1172.45 1593.88L1172.45 1593.88"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M805.04 1864.03L805.04 1864.03"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1177.85 2058.54L1177.85 2058.54"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M821.25 2377.31L821.25 2377.31"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M994.15 2555.61L994.15 2555.61"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1177.85 2431.34L1177.85 2431.34"/>
+    <path android:strokeColor="#FFFF0000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M967.13 1448L967.13 1448"/>
+    <path android:strokeColor="#FF00FFFF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1485.82 1977.49L1485.82 1977.49"/>
+    <path android:strokeColor="#FF00FFFF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M502.48 2431.34L502.48 2431.34"/>
+    <path android:strokeColor="#FFFFFF00" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M405.22 1864.03L405.22 1864.03"/>
+    <path android:strokeColor="#FFFFFF00" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1550.66 2652.87L1550.66 2652.87"/>
+    <path android:strokeColor="#FFFFFF00" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M669.97 2755.52L669.97 2755.52"/>
+    <path android:strokeColor="#FFFF69B4" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M605.13 718.6L605.13 718.6"/>
+    <path android:strokeColor="#FFFF8000" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1556.06 1188.66L1556.06 1188.66"/>
+    <path android:strokeColor="#FFFF00FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1631.7 1577.67L1631.7 1577.67"/>
+    <path android:strokeColor="#FF00FF00" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M151.28 1188.66L151.28 1188.66"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M502.48 653.76L502.48 653.76"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M734.81 648.36L734.81 648.36"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1194.06 648.36L1194.06 648.36"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1712.75 1156.24L1712.75 1156.24"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1680.33 480.87L1680.33 480.87"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M291.76 1556.06L291.76 1556.06"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M691.58 1507.43L691.58 1507.43"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M297.16 2134.18L297.16 2134.18"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M318.78 1918.06L318.78 1918.06"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M724 2161.19L724 2161.19"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M248.54 2479.97L248.54 2479.97"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M540.3 2431.34L540.3 2431.34"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M675.37 2350.3L675.37 2350.3"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M394.42 2733.91L394.42 2733.91"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M345.79 2993.25L345.79 2993.25"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M675.37 2993.25L675.37 2993.25"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M686.18 2669.07L686.18 2669.07"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1010.36 2706.9L1010.36 2706.9"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1113.01 2912.21L1113.01 2912.21"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1448 2512.39L1448 2512.39"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1701.94 2479.97L1701.94 2479.97"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1680.33 2885.19L1680.33 2885.19"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1491.22 2987.85L1491.22 2987.85"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1285.91 1837.01L1285.91 1837.01"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1766.78 1901.85L1766.78 1901.85"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1750.57 2188.21L1750.57 2188.21"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1318.33 2161.19L1318.33 2161.19"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1291.31 1502.03L1291.31 1502.03"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1691.13 1475.01L1691.13 1475.01"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1745.16 1583.07L1745.16 1583.07"/>
+    <path android:strokeColor="#FF0080FF" android:strokeWidth="60" android:strokeLineCap="round" android:pathData="M1275.1 1664.12L1275.1 1664.12"/>
 </vector>`;
 
 function loadDefaultXML() {
   document.getElementById('xmlInput').value = DEFAULT_XML;
   parseXMLInput();
+}
+
+function loadXMLFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('xmlInput').value = e.target.result;
+    parseXMLInput();
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = ''; // reset để có thể load lại cùng file
 }
 
 function androidColorToHex(raw) {
@@ -676,25 +763,34 @@ function parseXMLInput() {
     const doc = new DOMParser().parseFromString(xml, 'text/xml');
     const vector = doc.querySelector('vector');
     if (vector) {
-      vpW = parseFloat(vector.getAttribute('android:viewportWidth') || vpW);
-      vpH = parseFloat(vector.getAttribute('android:viewportHeight') || vpH);
+      // Iterate attrs để tránh vấn đề namespace trong text/xml parsing
+      for (const attr of vector.attributes) {
+        if (attr.name.endsWith('viewportWidth'))  vpW = parseFloat(attr.value) || vpW;
+        if (attr.name.endsWith('viewportHeight')) vpH = parseFloat(attr.value) || vpH;
+      }
       document.getElementById('vpW').value = vpW;
       document.getElementById('vpH').value = vpH;
     }
     pushHistory(); items = [];
     doc.querySelectorAll('path').forEach(p => {
-      const d   = p.getAttribute('android:pathData') || '';
-      const col = androidColorToHex(p.getAttribute('android:strokeColor') || '#FF000000');
-      const sw  = parseFloat(p.getAttribute('android:strokeWidth') || 20);
-      // Dot: M x yL x y (same point)
-      const dot = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*L\s*([\d.-]+)\s+([\d.-]+)/i);
-      if (dot) {
-        const x1=parseFloat(dot[1]),y1=parseFloat(dot[2]),x2=parseFloat(dot[3]),y2=parseFloat(dot[4]);
-        if (Math.abs(x1-x2)<1 && Math.abs(y1-y2)<1) {
-          items.push({ type:'dot', x:x1, y:y1, color:col, size:sw });
-        } else {
-          items.push({ type:'line', x1, y1, x2, y2, color:col, width:sw });
-        }
+      // Dùng endsWith thay vì getAttribute('android:xxx') để tránh lỗi namespace
+      let d = '', col = '#FF000000', sw = 20, isRound = false;
+      for (const attr of p.attributes) {
+        const n = attr.name;
+        if (n.endsWith('pathData'))      d       = attr.value;
+        if (n.endsWith('strokeColor'))   col     = attr.value;
+        if (n.endsWith('strokeWidth'))   sw      = parseFloat(attr.value) || 20;
+        if (n.endsWith('strokeLineCap')) isRound = (attr.value === 'round');
+      }
+      col = androidColorToHex(col);
+      const m = d.match(/M\s*([\d.-]+)\s+([\d.-]+)\s*L?\s*([\d.-]+)\s+([\d.-]+)/i);
+      if (!m) return;
+      const x1=parseFloat(m[1]),y1=parseFloat(m[2]),x2=parseFloat(m[3]),y2=parseFloat(m[4]);
+      const isDot = isRound || (Math.abs(x1-x2)<1 && Math.abs(y1-y2)<1);
+      if (isDot) {
+        items.push({ type:'dot', x:x1, y:y1, color:col, size:sw });
+      } else {
+        items.push({ type:'line', x1, y1, x2, y2, color:col, width:sw });
       }
     });
     initCanvas(); updateList();
@@ -706,11 +802,10 @@ function hexToAndroid(hex) {
   return '#FF' + hex.replace('#','').toUpperCase();
 }
 
-function exportXML() {
+function generateXML() {
   let xml = `<vector xmlns:android="http://schemas.android.com/apk/res/android"\n`;
   xml += `    android:width="${vpW}dp"\n    android:height="${vpH}dp"\n`;
   xml += `    android:viewportWidth="${vpW}"\n    android:viewportHeight="${vpH}">\n`;
-
   items.forEach(it => {
     const col = hexToAndroid(it.color);
     if (it.type === 'dot') {
@@ -727,9 +822,164 @@ function exportXML() {
     }
   });
   xml += `</vector>`;
-  document.getElementById('xmlText').value = xml;
+  return xml;
+}
+
+function exportXML() {
+  document.getElementById('xmlText').value = generateXML();
   document.getElementById('xmlOutput').style.display = 'block';
   document.getElementById('overlay').style.display = 'block';
+}
+
+async function saveToDrawable() {
+  const xml = generateXML();
+  const filename = `map${currentMapIndex}.xml`;
+  if (xmlDirHandle) {
+    try {
+      const fh = await xmlDirHandle.getFileHandle(filename, { create: true });
+      const w  = await fh.createWritable();
+      await w.write(xml);
+      await w.close();
+      alert(`✅ Đã lưu ${filename} vào ${xmlDirHandle.name}`);
+      return;
+    } catch(e) { console.warn('Lỗi ghi file:', e); }
+  }
+  // Fallback: download
+  const blob = new Blob([xml], { type: 'application/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ─── IndexedDB — lưu directory handle giữa các session ───────────────────────
+const IDB_NAME = 'collision_editor_v1';
+
+function openIDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = rej;
+  });
+}
+async function idbPut(key, val) {
+  try {
+    const db = await openIDB();
+    await new Promise((res, rej) => {
+      const tx = db.transaction('handles', 'readwrite');
+      tx.objectStore('handles').put(val, key);
+      tx.oncomplete = res; tx.onerror = rej;
+    });
+    db.close();
+  } catch(e) { console.warn('idbPut', e); }
+}
+async function idbGet(key) {
+  try {
+    const db = await openIDB();
+    const val = await new Promise((res, rej) => {
+      const req = db.transaction('handles','readonly').objectStore('handles').get(key);
+      req.onsuccess = () => res(req.result); req.onerror = rej;
+    });
+    db.close(); return val;
+  } catch(e) { return null; }
+}
+
+// ─── Directory helpers ────────────────────────────────────────────────────────
+function updateMapLabel() {
+  document.getElementById('mapLabel').textContent = `Map ${currentMapIndex}`;
+}
+
+// Auto-set viewport = kích thước thực của ảnh, rồi re-init canvas
+function applyImageViewport(img) {
+  vpW = img.naturalWidth;
+  vpH = img.naturalHeight;
+  document.getElementById('vpW').value = vpW;
+  document.getElementById('vpH').value = vpH;
+  initCanvas();
+}
+function updateImgDirUI() {
+  if (!imgDirHandle) return;
+  document.getElementById('imgDirName').textContent = imgDirHandle.name;
+  document.getElementById('imgDirInfo').style.display = 'block';
+}
+function updateXmlDirUI() {
+  if (!xmlDirHandle) return;
+  document.getElementById('xmlDirName').textContent = xmlDirHandle.name;
+  document.getElementById('xmlDirInfo').style.display = 'block';
+}
+
+async function selectImgDir() {
+  try {
+    // startIn = handle đã lưu → picker mở ngay tại thư mục cũ
+    const saved   = imgDirHandle || await idbGet('imgDir');
+    const startIn = saved || 'pictures';
+    imgDirHandle  = await window.showDirectoryPicker({ mode: 'read', startIn });
+    await idbPut('imgDir', imgDirHandle);
+    updateImgDirUI();
+    await loadMapImage(currentMapIndex);
+  } catch(e) { if (e.name !== 'AbortError') alert('Lỗi: ' + e); }
+}
+
+async function selectXmlDir() {
+  try {
+    const saved   = xmlDirHandle || await idbGet('xmlDir');
+    const startIn = saved || 'documents';
+    xmlDirHandle  = await window.showDirectoryPicker({ mode: 'readwrite', startIn });
+    await idbPut('xmlDir', xmlDirHandle);
+    updateXmlDirUI();
+    await loadMapXML(currentMapIndex);
+  } catch(e) { if (e.name !== 'AbortError') alert('Lỗi: ' + e); }
+}
+
+async function loadMapImage(index) {
+  if (!imgDirHandle) return;
+  for (const ext of ['jpg', 'png', 'jpeg', 'webp']) {
+    try {
+      const fh   = await imgDirHandle.getFileHandle(`${index}.${ext}`);
+      const file = await fh.getFile();
+      bgImg = new Image();
+      bgImg.onload = () => { applyImageViewport(bgImg); render(); };
+      bgImg.src = URL.createObjectURL(file);
+      return;
+    } catch(_) {}
+  }
+}
+
+async function loadMapXML(index) {
+  if (!xmlDirHandle) return;
+  try {
+    const fh   = await xmlDirHandle.getFileHandle(`map${index}.xml`);
+    const file = await fh.getFile();
+    const text = await file.text();
+    document.getElementById('xmlInput').value = text;
+    parseXMLInput();
+  } catch(_) {
+    pushHistory(); items = []; zones = [];
+    updateList(); render();
+  }
+}
+
+async function nextMap() {
+  if (currentMapIndex >= 47) return;
+  currentMapIndex++;
+  updateMapLabel();
+  await Promise.all([loadMapImage(currentMapIndex), loadMapXML(currentMapIndex)]);
+}
+
+async function prevMap() {
+  if (currentMapIndex <= 1) return;
+  currentMapIndex--;
+  updateMapLabel();
+  await Promise.all([loadMapImage(currentMapIndex), loadMapXML(currentMapIndex)]);
+}
+
+// Khôi phục tên thư mục đã chọn từ session trước (chỉ UI, không auto-load)
+async function restoreHandleUI() {
+  const imgH = await idbGet('imgDir');
+  if (imgH) { imgDirHandle = imgH; updateImgDirUI(); }
+  const xmlH = await idbGet('xmlDir');
+  if (xmlH) { xmlDirHandle = xmlH; updateXmlDirUI(); }
 }
 
 function copyXML() {
@@ -760,7 +1010,9 @@ document.addEventListener('keydown', e => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 buildPalette();
 updateActiveInfo();
+updateMapLabel();
 initCanvas();
+restoreHandleUI();
 </script>
 </body>
 </html>

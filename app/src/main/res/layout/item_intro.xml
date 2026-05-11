@@ -1,26 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:background="@color/gntRed">
 
     <ImageView
         android:id="@+id/imvImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitXY"
+        android:layout_marginBottom="0dp"
+        android:scaleType="fitCenter"
         android:src="@drawable/img_intro_2" />
 
     <TextView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="-10dp"
+        android:layout_marginTop="-40dp"
+        android:layout_marginEnd="-10dp"
+        android:layout_marginBottom="-40dp"
+        android:background="@drawable/blur_img"
+        android:fontFamily="@font/tradewinds_regular"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="@id/tvContent"
+        app:layout_constraintEnd_toEndOf="@id/tvContent"
+        app:layout_constraintStart_toStartOf="@id/tvContent"
+        app:layout_constraintTop_toTopOf="@id/tvContent" />
+
+    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvContent"
-        style="@style/single_marquee"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:fontFamily="@font/joan_regular"
+        android:layout_marginBottom="30dp"
+        android:fontFamily="@font/tradewinds_regular"
         android:gravity="center"
+        android:shadowColor="#80000000"
+        android:shadowDy="4"
+        android:shadowRadius="6"
         android:textColor="@color/white"
         android:textSize="16sp"
-        android:layout_marginBottom="40dp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:outerStrokeColor="@color/black"
+        app:outerStrokeWidth="2dp"
+        tools:text="hehehehheeee" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

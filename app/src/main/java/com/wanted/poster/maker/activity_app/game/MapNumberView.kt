@@ -90,19 +90,35 @@ class MapNumberView @JvmOverloads constructor(
         loadAssets(1, 1)
     }
 
-    fun animateKillerAlongPath(path: List<PointF>, durationMs: Long = 3500L, onComplete: () -> Unit) {
+    fun animateKillerAlongPath(path: List<PointF>, durationMs: Long = 6500L, onComplete: () -> Unit) {
         killerAnimator?.cancel()
         if (path.size < 2) { onComplete(); return }
+
+        val segments = path.size - 1
+        val rng = java.util.Random()
+
+        // Mỗi segment nhận weight ngẫu nhiên 0.4..2.2 → tốc độ không đều
+        val weights = FloatArray(segments) { 0.4f + rng.nextFloat() * 1.8f }
+        val total = weights.sum()
+
+        // timeBounds[i] = thời điểm bắt đầu segment i, tính theo 0..1
+        val timeBounds = FloatArray(segments + 1)
+        for (i in 0 until segments) timeBounds[i + 1] = timeBounds[i] + weights[i] / total
+
         killerAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = durationMs
             interpolator = LinearInterpolator()
             addUpdateListener { va ->
-                val progress = va.animatedValue as Float
-                val segments = path.size - 1
-                val segProgress = progress * segments
-                val idx = segProgress.toInt().coerceIn(0, segments - 1)
-                val frac = segProgress - idx
-                val from = path[idx]; val to = path[(idx + 1).coerceAtMost(path.size - 1)]
+                val t = va.animatedValue as Float
+                // Tìm segment hiện tại
+                var seg = segments - 1
+                for (i in 0 until segments) {
+                    if (t <= timeBounds[i + 1]) { seg = i; break }
+                }
+                val segStart = timeBounds[seg]
+                val segEnd   = timeBounds[seg + 1]
+                val frac = if (segEnd > segStart) ((t - segStart) / (segEnd - segStart)).coerceIn(0f, 1f) else 1f
+                val from = path[seg]; val to = path[seg + 1]
                 killerPos.x = from.x + (to.x - from.x) * frac
                 killerPos.y = from.y + (to.y - from.y) * frac
                 invalidate()

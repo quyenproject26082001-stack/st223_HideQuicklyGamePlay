@@ -34,7 +34,7 @@
         android:fontFamily="@font/roboto_regular"
         android:gravity="center"
         android:text="@string/this_action_can_contain_ads"
-        android:textColor="#80FFFFFF"
+        android:textColor="#FFFFFF"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
