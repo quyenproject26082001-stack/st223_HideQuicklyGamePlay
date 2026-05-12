@@ -22,6 +22,7 @@ import com.wanted.poster.maker.activity_app.game.GameActivity
 import com.wanted.poster.maker.core.extensions.strings
 //quyen
 import com.lvt.ads.util.Admob
+import com.wanted.poster.maker.activity_app.game.ChooseKillerActivity
 import com.wanted.poster.maker.core.extensions.showInterAll
 import com.wanted.poster.maker.core.viewmodel.PosterEditorSharedViewModel
 //quyen
@@ -66,7 +67,7 @@ class MainActivity : BaseActivity<ActivityHomeBinding>() {
     override fun viewListener() {
         binding.apply {
             actionBar.btnActionBarRight.setOnSingleClick { startIntentRightToLeft(SettingsActivity::class.java) }
-            btnSingle.setOnSingleClick { startIntentRightToLeft(GameActivity::class.java) }
+            btnSingle.setOnSingleClick { startIntentRightToLeft(ChooseKillerActivity::class.java) }
             //quyen
             //quyen
         }

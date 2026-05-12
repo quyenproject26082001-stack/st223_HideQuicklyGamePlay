@@ -66,6 +66,7 @@
       app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
       android:orientation="horizontal"
         android:scrollbars="horizontal"
+      android:id="@+id/rvKiller"
       />
 
 
