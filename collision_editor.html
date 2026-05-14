@@ -98,8 +98,9 @@
     <div class="tool-row" style="margin-bottom:4px">
       <button class="btn-mode" onclick="prevMap()" style="flex:0 0 36px">◀</button>
       <button class="btn-mode" onclick="nextMap()" style="flex:1">▶ Next map</button>
-      <button class="btn-load" onclick="selectImgDir()" style="flex:0 0 36px" title="Chọn thư mục chứa ảnh map">📁</button>
+      <button class="btn-load" onclick="selectImgDir()" style="flex:0 0 36px" title="app\src\main\assets\Map">📁</button>
     </div>
+    <div style="font-size:9px;color:#666;margin:2px 0;word-break:break-all">📌 app\src\main\assets\Map</div>
     <div id="imgDirInfo" style="font-size:10px;color:#aaa;margin:2px 0;display:none">
       📂 <span id="imgDirName"></span>
     </div>
@@ -145,6 +146,11 @@
       <button class="btn-mode" id="btnEraser" onclick="setTool('eraser')" style="background:#8B4513;flex:1">🧹 Tẩy</button>
       <button class="btn-mode" id="btnBrush"  onclick="setTool('brush')"  style="background:#2a5a2a;flex:1">🤍 Vùng Spawn</button>
     </div>
+    <div id="lineSizeRow" style="display:none;margin-top:5px">
+      <label>Độ dày tường: <span id="lineVal">20</span>dp</label>
+      <input type="range" id="lineSize" min="5" max="80" value="20"
+        oninput="document.getElementById('lineVal').textContent=this.value">
+    </div>
     <div id="eraserSizeRow" style="display:none;margin-top:5px">
       <label>Bán kính tẩy: <span id="erVal">80</span>dp</label>
       <input type="range" id="eraserSize" min="10" max="300" value="80"
@@ -175,6 +181,7 @@
   <div class="section">
     <label>Load / Import XML</label>
     <button class="btn-load" onclick="selectXmlDir()" style="width:100%">📁 Chọn thư mục drawable...</button>
+    <div style="font-size:9px;color:#666;margin:2px 0;word-break:break-all">📌 app\src\main\res\drawable</div>
     <div id="xmlDirInfo" style="font-size:10px;color:#aaa;margin:3px 0;display:none">
       📂 <span id="xmlDirName"></span>
     </div>
@@ -339,6 +346,7 @@ function setTool(t) {
     document.getElementById('btn'+n) &&
     document.getElementById('btn'+n).classList.toggle('active', t === n.toLowerCase())
   );
+  document.getElementById('lineSizeRow').style.display   = t === 'draw'   ? 'block' : 'none';
   document.getElementById('eraserSizeRow').style.display = t === 'eraser' ? 'block' : 'none';
   document.getElementById('brushSizeRow').style.display  = t === 'brush'  ? 'block' : 'none';
   updateActiveInfo();
@@ -433,7 +441,7 @@ canvas.addEventListener('mouseup', e => {
       pushHistory();
       items.push({ type:'line', x1:startX, y1:startY, x2:vp.x, y2:vp.y,
         color: activePreset.color,
-        width: activePreset.width || 20 });
+        width: parseInt(document.getElementById('lineSize').value) || 20 });
       updateList();
     }
     render();

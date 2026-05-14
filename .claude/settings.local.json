@@ -5,7 +5,11 @@
       "PowerShell(Get-Command *)",
       "PowerShell(Get-ChildItem *)",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\\\\app\\\\src\\\\main\\\\assets\\\\Map\\\\1.jpg\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
-      "PowerShell(Test-Path *)"
+      "PowerShell(Test-Path *)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; Set-Location \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew.bat assembleDebug 2>&1 | Select-Object -Last 80)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug --quiet 2>&1 | Select-Object -Last 20)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug 2>&1 | Select-String -Pattern \"error:|BUILD\" | Select-Object -Last 30)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug 2>&1 | Select-String -Pattern \"error:|BUILD\" | Select-Object -Last 10)"
     ]
   }
 }

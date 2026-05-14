@@ -53,4 +53,13 @@
     <declare-styleable name="RatioFrameLayout">
         <attr name="ratio" format="string" /> <!-- ví dụ: "1:1" hoặc "3:4" -->
     </declare-styleable>
+    <declare-styleable name="MaskedRegionView">
+        <attr name="fillColor" format="color" />
+        <attr name="fillDrawable" format="reference" />
+        <attr name="maskType">
+            <enum name="outer" value="0" />
+            <enum name="map" value="1" />
+            <enum name="overlay" value="2" />
+        </attr>
+    </declare-styleable>
 </resources>

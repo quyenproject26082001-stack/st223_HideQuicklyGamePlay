@@ -25,6 +25,9 @@
         <activity
             android:name=".activity_app.game.ChooseKillerActivity"
             android:exported="false" />
+        <activity
+            android:name=".activity_app.game.SetupGameActivity"
+            android:exported="false" />
         <!-- Disable AdMob auto-initialization -->
         <provider
             android:name="com.google.android.gms.ads.MobileAdsInitProvider"

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'com.wanted.poster.maker'
+    namespace 'com.wanted.poster.hihi'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.wanted.poster.maker"
+        applicationId "com.wanted.poster.hihi"
         minSdk 24
         targetSdk 36
         versionCode 1
@@ -18,7 +18,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         def formattedDate = new Date().format('MM.dd.yyyy')
-        archivesBaseName = "ST222_v${versionName}_${formattedDate}"
+        archivesBaseName = "ST223_v${versionName}_${formattedDate}"
     }
 
     buildTypes {
@@ -41,6 +41,10 @@ android {
     buildFeatures {
         viewBinding true
     }
+    aaptOptions {
+        noCompress "mp3"
+    }
+
     bundle {
         language {
             enableSplit = false
@@ -137,7 +141,6 @@ dependencies {
     implementation 'com.github.LVTapp:AdsLibrary:1.5.5'
     implementation 'com.google.android.gms:play-services-ads:24.8.0'
     implementation 'com.google.ads.mediation:facebook:6.21.0.0'
-    implementation 'com.google.ads.mediation:vungle:7.6.1.0'
     implementation 'com.google.ads.mediation:applovin:13.5.1.0'
     implementation 'com.google.ads.mediation:pangle:7.7.0.2.0'
     implementation 'com.google.ads.mediation:ironsource:9.1.0.0'

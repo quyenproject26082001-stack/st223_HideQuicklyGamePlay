@@ -1,49 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp">
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:clipToOutline="false"
+    android:layout_margin="14dp">
 
-    <ImageView
-        android:id="@+id/imgMap"
+    <FrameLayout
+        android:id="@+id/flMapPreview"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:scaleType="centerCrop"
-        android:background="#2A2A2A" />
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <!-- Approach badge (top-right) -->
-    <TextView
-        android:id="@+id/tvApproach"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_margin="6dp"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp"
-        android:textColor="#FFFFFF"
-        android:textSize="11sp"
-        android:textStyle="bold" />
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:id="@+id/viewOuterBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:foreground="@drawable/item_mask"
+            android:layout_gravity="center"
+            app:fillDrawable="@drawable/bg_item_map"
+            app:maskType="outer" />
 
-    <!-- Map label (bottom-left) -->
-    <TextView
-        android:id="@+id/tvMapLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|start"
-        android:layout_margin="6dp"
-        android:background="#CC000000"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:id="@+id/viewOverlayBase"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:foreground="@drawable/item_mask"
+            android:layout_gravity="center"
+            app:fillDrawable="@drawable/bg_green_dark"
+            app:maskType="overlay" />
 
-    <!-- Selected highlight border -->
-    <View
-        android:id="@+id/viewSelected"
+        <com.wanted.poster.hihi.core.custom.view.MaskedMapImageView
+            android:id="@+id/viewMaskedMap"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:foreground="@drawable/item_mask"
+            android:layout_gravity="center" />
+
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:id="@+id/viewSelectedOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:foreground="@drawable/item_mask"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:fillColor="#80000000"
+            app:maskType="overlay" />
+
+        <ImageView
+            android:id="@+id/imgSelected"
+            android:layout_width="24dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="9dp"
+            android:src="@drawable/ic_done"
+            android:visibility="gone" />
+    </FrameLayout>
+
+
+    <FrameLayout
+        android:id="@+id/flMapLabel"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
-        android:background="#442196F3"
-        android:visibility="gone" />
-
-</FrameLayout>
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:clipToOutline="false"
+        android:background="@drawable/img_home_0"
+        android:layout_marginBottom="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="152:29">
+        <!-- Map label (bottom-left) -->
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:id="@+id/tvMapLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="6dp"
+            android:fontFamily="@font/tradewinds_regular"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:shadowColor="#80000000"
+            android:shadowDy="6"
+            android:shadowRadius="0.1"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:outerStrokeColor="@color/black"
+            app:outerStrokeWidth="2dp"
+            tools:background="@color/gntRed"
+            tools:text="SILENT VILLA" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

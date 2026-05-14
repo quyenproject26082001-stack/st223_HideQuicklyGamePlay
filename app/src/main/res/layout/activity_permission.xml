@@ -40,7 +40,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/imgPermission">
 
-        <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
             android:id="@+id/txtPer"
             android:fontFamily="@font/tradewinds_regular"
             android:layout_width="wrap_content"
@@ -91,7 +91,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="68dp">
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
@@ -126,7 +126,7 @@
                 android:layout_height="68dp"
                 >
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
@@ -190,7 +190,7 @@
         android:src="@drawable/blur_img"
         />
     <!-- tvContinue -->
-    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvContinue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

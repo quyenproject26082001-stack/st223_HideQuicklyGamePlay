@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginVertical="48dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/img_bg_app"
+                android:paddingBottom="20dp">
+
+                <FrameLayout
+                    android:id="@+id/flTitleKiller"
+                    android:layout_width="220dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/choose_killer_panel"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/containerShowKiller"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginHorizontal="25dp"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/bg_choose_killer"
+                    app:layout_constraintDimensionRatio="1:1"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/flTitleKiller">
+
+                    <ImageView
+                        android:id="@+id/ivKillerShow"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="20dp"
+                        android:scaleType="fitCenter" />
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:id="@+id/tvKillerName"
+                        android:layout_width="174dp"
+                        android:layout_height="55dp"
+                        android:layout_gravity="bottom|center"
+                        android:layout_marginBottom="-20dp"
+                        android:background="@drawable/bg_text_name_choosekiller"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:gravity="center"
+                        android:shadowColor="#1A000000"
+                        android:shadowDy="6"
+                        android:shadowRadius="0.000001"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        app:outerStrokeColor="@color/white"
+                        app:outerStrokeWidth="2dp"
+                        tools:text="Bubbles Doom" />
+                </FrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvKiller"
+                    android:layout_width="0dp"
+                    android:layout_height="80dp"
+                    android:layout_marginHorizontal="15dp"
+                    android:layout_marginTop="48dp"
+                    android:background="@drawable/frame_rcv_choose_killer"
+                    android:clipToPadding="true"
+                    android:orientation="horizontal"
+                    android:paddingEnd="6dp"
+                    android:paddingStart="0.1dp"
+                    android:scrollbars="none"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/containerShowKiller"
+                    tools:listitem="@layout/item_killer" />
+
+                <com.wanted.poster.hihi.core.custom.view.RecyclerScrollIndicatorView
+                    android:id="@+id/viewKillerScrollIndicator"
+                    android:layout_width="0dp"
+                    android:layout_height="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="15dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rvKiller" />
+
+                <FrameLayout
+                    android:id="@+id/btnCancelKiller"
+                    android:layout_width="130dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginStart="20dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintEnd_toStartOf="@id/btnSelectKiller"
+                    app:layout_constraintHorizontal_chainStyle="spread_inside"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/viewKillerScrollIndicator">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/cancel"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/btnSelectKiller"
+                    android:layout_width="130dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/btnCancelKiller"
+                    app:layout_constraintTop_toBottomOf="@id/viewKillerScrollIndicator">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/select"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+</layout>

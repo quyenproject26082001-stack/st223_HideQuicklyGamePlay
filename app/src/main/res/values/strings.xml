@@ -62,7 +62,7 @@
 
     <string name="an_error_occurred">An error occurred, please try again later.</string>
     <string name="image_has_been_saved_successfully">Image has been saved successfully!</string>
-    <string name="save">Save</string>
+    <string name="save">\u00a0Save\u00a0</string>
     <string name="are_you_sure_want_to_delete_this_item">Are you sure want to delete this item?</string>
     <string name="downloading">Downloading...</string>
     <string name="successfully">Successfully</string>
@@ -130,4 +130,24 @@
     <string name="my_filter">My Filter</string>
     <string name="multi_player">\u00a0MULTI PLAYER\u00a0</string>
     <string name="single_player">SINGLE PLAYER</string>
+    <string name="select">SELECT</string>
+    <string name="select_killer">SELECT KILLER</string>
+    <string name="select_map">SELECT MAP</string>
+    <string name="choose_your_number">CHOOSE \\nYOUR NUMBER</string>
+    <string name="select_a_number_to_survive">SELECT A NUMBER TO SURVIVE</string>
+    <string name="start">START</string>
+    <string name="play_again">PLAY AGAIN</string>
+    <string name="you_picked_the_wrong_number">YOU PICKED THE WRONG NUMBER!</string>
+    <string name="you_survived_this_round_successfully">YOU SURVIVED THIS ROUND \nSUCCESSFULLY!</string>
+    <string name="you_win">\u00a0YOU WIN!\u00a0</string>
+    <string name="tap_to_change">\u00a0TAP TO CHANGE\u00a0</string>
+    <string name="set_up_game">SET UP GAME</string>
+    <string name="players">PLAYERS</string>
+    <string name="choose_killer_panel">CHOOSE KILLER</string>
+    <string name="choose_map_panel">CHOOSE MAP</string>
+    <string name="choose_avatar_panel">CHOOSE AVATAR</string>
+    <string name="rename">RENAME</string>
+    <string name="start_play">START PLAY</string>
+    <string name="tab_any">Any</string>
+    <string name="tab_country">Country</string>
 </resources>

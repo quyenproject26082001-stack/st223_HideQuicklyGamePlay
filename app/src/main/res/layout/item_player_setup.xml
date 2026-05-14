@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    android:clipChildren="false"
+    android:clipToOutline="false"
+    android:clipToPadding="false"
+    >
+
+
+    <View
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/dividerPlayersItem"
+        android:layout_width="0dp"
+
+        android:layout_height="1dp"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="0dp"
+        android:background="#000000"
+        />
+
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+        android:id="@+id/tvPlayerNumber"
+        android:layout_width="28dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/tradewinds_regular"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dividerPlayersItem"
+        app:outerStrokeColor="@color/black"
+        android:shadowColor="#80000000"
+        android:shadowDy="6"
+        app:outerStrokeWidth="2dp"
+        tools:text="1" />
+
+    <FrameLayout
+        android:id="@+id/flAvatar"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="8dp"
+        android:clipChildren="false"
+        android:clipToOutline="false"
+        android:background="@drawable/ic_avatar_list_player"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tvPlayerNumber"
+        app:layout_constraintTop_toTopOf="@id/dividerPlayersItem">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardCornerRadius="5dp"
+            app:cardElevation="0dp"
+            android:layout_gravity="center"
+            app:strokeColor="#50FFFFFF"
+            >
+
+            <ImageView
+                android:id="@+id/ivAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:scaleType="centerCrop" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <ImageView
+            android:id="@+id/ivEditAvatar"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-7dp"
+            android:layout_marginEnd="-8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="3dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_edit_avatar" />
+    </FrameLayout>
+
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+        android:id="@+id/tvPlayerName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/tradewinds_regular"
+        android:maxLines="1"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnEditPlayer"
+        app:layout_constraintStart_toEndOf="@id/flAvatar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:outerStrokeColor="@color/black"
+        app:outerStrokeWidth="2dp"
+        android:shadowColor="#80000000"
+        android:shadowDy="6"
+        tools:text="Player 1" />
+
+    <ImageView
+        android:id="@+id/btnEditPlayer"
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_marginEnd="22dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_edit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnDeletePlayer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.2" />
+
+    <ImageView
+        android:id="@+id/btnDeletePlayer"
+        android:layout_width="13dp"
+        android:layout_height="19dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_delete"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

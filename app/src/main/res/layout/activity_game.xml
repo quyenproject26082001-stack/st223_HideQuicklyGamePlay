@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="#000">
 
-    <com.wanted.poster.maker.activity_app.game.GameView
+    <com.wanted.poster.hihi.activity_app.game.GameView
         android:id="@+id/gameView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

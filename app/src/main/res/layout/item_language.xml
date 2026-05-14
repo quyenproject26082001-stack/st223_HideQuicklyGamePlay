@@ -41,7 +41,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <!--            tvLang-->
-            <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+            <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                 android:id="@+id/tvLang"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

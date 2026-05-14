@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.wanted.poster.maker.activity_app.SettingsActivity">
+    tools:context="com.wanted.poster.hihi.activity_app.SettingsActivity">
 
     <ImageView
         android:layout_width="match_parent"
@@ -63,7 +63,7 @@
                         android:src="@drawable/ic_lang_set" />
                 </FrameLayout>
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
@@ -116,7 +116,7 @@
                         android:src="@drawable/ic_rate_set" />
                 </FrameLayout>
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
@@ -166,7 +166,7 @@
                         android:src="@drawable/ic_share_set" />
                 </FrameLayout>
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"
@@ -217,7 +217,7 @@
                         android:src="@drawable/ic_policy_set" />
                 </FrameLayout>
 
-                <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="10dp"

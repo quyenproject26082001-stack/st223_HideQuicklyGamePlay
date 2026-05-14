@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginVertical="48dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/img_bg_app">
+
+                <FrameLayout
+                    android:id="@+id/flTitleMap"
+                    android:layout_width="200dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/choose_map_panel"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvMaps"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="8dp"
+                    android:clipToPadding="false"
+                    android:padding="4dp"
+                    app:layout_constraintBottom_toTopOf="@id/btnCancelMap"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/flTitleMap"
+                    tools:listitem="@layout/item_map" />
+
+                <FrameLayout
+                    android:id="@+id/btnCancelMap"
+                    android:layout_width="130dp"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:layout_marginStart="20dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnSelectMap"
+                    app:layout_constraintHorizontal_chainStyle="spread_inside"
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/cancel"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/btnSelectMap"
+                    android:layout_width="130dp"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@drawable/img_home_0"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/btnCancelMap">
+
+                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="@font/tradewinds_regular"
+                        android:text="@string/select"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        app:outerStrokeColor="@color/black"
+                        app:outerStrokeWidth="2dp" />
+                </FrameLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+</layout>

@@ -32,13 +32,14 @@
         <ImageView
             android:id="@+id/ivKillerShow"
             android:layout_width="match_parent"
+            android:layout_margin="20dp"
             android:layout_height="match_parent"
             tools:src="@drawable/img_home_0"/>
 
-        <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
             android:id="@+id/tvNameChooseKiller"
-            android:layout_width="169dp"
-            android:layout_height="50dp"
+            android:layout_width="174dp"
+            android:layout_height="55dp"
             android:background="@drawable/bg_text_name_choosekiller"
             android:layout_gravity="bottom|center"
             android:layout_marginBottom="-20dp"
@@ -58,17 +59,61 @@
 
   <androidx.recyclerview.widget.RecyclerView
       android:layout_width="match_parent"
-      android:layout_height="wrap_content"
+      android:layout_height="80dp"
       app:layout_constraintTop_toBottomOf="@id/containerShowKiller"
       android:layout_marginStart="15dp"
       android:layout_marginEnd="10dp"
       android:layout_marginTop="50dp"
+      android:paddingStart="0.1dp"
+      android:paddingEnd="6dp"
+      android:clipToPadding="true"
+      tools:listitem="@layout/item_killer"
+      android:background="@drawable/frame_rcv_choose_killer"
       app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
       android:orientation="horizontal"
-        android:scrollbars="horizontal"
+      android:scrollbars="none"
       android:id="@+id/rvKiller"
       />
 
+    <com.wanted.poster.hihi.core.custom.view.RecyclerScrollIndicatorView
+        android:id="@+id/viewKillerScrollIndicator"
+        android:layout_width="313dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/rvKiller"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <FrameLayout
+        android:layout_width="200dp"
+        android:layout_height="64dp"
+        app:layout_constraintTop_toBottomOf="@id/viewKillerScrollIndicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/img_home_0"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="30dp"
+        android:id="@+id/btnSelect"
+        >
+        
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:outerStrokeColor="@color/black"
+            app:outerStrokeWidth="2dp"
+            android:shadowDy="6"
+            android:shadowRadius="0.01"
+            android:shadowColor="#80000000"
+            android:text="@string/select"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:fontFamily="@font/tradewinds_regular"
+            android:textSize="24sp"
+            />
+        
+    </FrameLayout>
+        
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

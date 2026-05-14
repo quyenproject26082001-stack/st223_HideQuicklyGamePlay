@@ -118,4 +118,13 @@
     <string name="my_filter">Mi Filtro</string>
     <string name="multi_player">MULTI PLAYER</string>
     <string name="single_player">SINGLE PLAYER</string>
+    <string name="select">SELECT</string>
+    <string name="choose_your_number">CHOOSE \\nYOUR NUMBER</string>
+    <string name="select_a_number_to_survive">SELECT A NUMBER TO SURVIVE</string>
+    <string name="start">START</string>
+    <string name="play_again">PLAY AGAIN</string>
+    <string name="you_picked_the_wrong_number">YOU PICKED THE WRONG NUMBER!</string>
+    <string name="you_survived_this_round_successfully">YOU SURVIVED THIS ROUND \nSUCCESSFULLY!</string>
+    <string name="you_win">YOU WIN!</string>
+    <string name="tap_to_change">TAP TO CHANGE</string>
 </resources>

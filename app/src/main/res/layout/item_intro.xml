@@ -29,7 +29,7 @@
         app:layout_constraintStart_toStartOf="@id/tvContent"
         app:layout_constraintTop_toTopOf="@id/tvContent" />
 
-    <com.wanted.poster.maker.core.custom.text.DoubleStrokeTextView
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
