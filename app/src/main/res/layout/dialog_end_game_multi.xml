@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="24dp"
+            android:paddingTop="36dp"
+            android:paddingBottom="20dp">
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:scaleType="fitXY"
+                android:src="@drawable/bg_dialog_choose_avatar"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Title floating above -->
+            <FrameLayout
+                android:id="@+id/flTitle"
+                android:layout_width="220dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="-28dp"
+                android:background="@drawable/bg_title_choose_avatar_dialog"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/game_over"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:shadowColor="#80000000"
+                    android:shadowDy="6"
+                    app:outerStrokeColor="@color/white"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+            <!-- Results list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvResults"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:maxHeight="300dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/flTitle" />
+
+            <!-- Buttons -->
+            <FrameLayout
+                android:id="@+id/btnHome"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:background="@drawable/img_home_0"
+                app:layout_constraintEnd_toStartOf="@id/btnPlayAgain"
+                app:layout_constraintHorizontal_chainStyle="spread_inside"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rvResults">
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/home"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/btnPlayAgain"
+                android:layout_width="120dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/img_home_0"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/btnHome"
+                app:layout_constraintTop_toBottomOf="@id/rvResults">
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/play_again"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</layout>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/ivResultAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/avatar" />
+
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:id="@+id/tvResultName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/tradewinds_regular"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            app:outerStrokeColor="@color/black"
+            app:outerStrokeWidth="1.5dp"
+            tools:text="Player 1" />
+
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:id="@+id/tvResultStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/tradewinds_regular"
+            android:textSize="14sp"
+            app:outerStrokeColor="@color/black"
+            app:outerStrokeWidth="1.5dp"
+            tools:text="SURVIVED" />
+
+    </LinearLayout>
+</layout>

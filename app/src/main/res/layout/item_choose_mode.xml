@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_margin="14dp">
+
+    <FrameLayout
+        android:id="@+id/flModePreview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            app:fillDrawable="@drawable/bg_item_map"
+            app:maskType="outer" />
+
+
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            app:fillDrawable="@drawable/bg_green_dark"
+            app:maskType="overlay" />
+
+        <com.wanted.poster.hihi.core.custom.view.MaskedRegionView
+            android:id="@+id/viewModeSelectedOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            app:fillColor="#80000000"
+            app:maskType="overlay" />
+
+        <ImageView
+            android:id="@+id/imgModeSelected"
+            android:layout_width="24dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="9dp"
+            android:src="@drawable/ic_done"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+
+    <ImageView
+        android:id="@+id/ivModeIcon"
+        android:layout_width="101dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:scaleType="fitXY"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/ic_manual" />
+
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:id="@+id/tvModeLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/ivModeIcon"
+            android:layout_marginTop="-1.5dp"
+            android:fontFamily="@font/tradewinds_regular"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:shadowColor="#80000000"
+            android:shadowDy="6"
+            android:shadowRadius="0.1"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:outerStrokeColor="@color/black"
+            app:outerStrokeWidth="2dp"
+            tools:text="@string/manual" />
+
+        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/pick_your_starting_hideout"
+            android:textSize="8sp"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/tvModeLabel"
+            android:layout_marginTop="10dp"
+            android:shadowColor="#80000000"
+            android:fontFamily="@font/tradewinds_regular"
+            android:textColor="@color/black"
+            app:outerStrokeColor="@color/white"
+
+            />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

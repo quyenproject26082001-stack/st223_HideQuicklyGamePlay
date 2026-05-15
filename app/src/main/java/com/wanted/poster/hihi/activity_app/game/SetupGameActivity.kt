@@ -24,6 +24,7 @@ class SetupGameActivity : AppCompatActivity() {
     private var selectedMapOption: MapOption? = null
     private var selectedKillerPath: String? = null
     private var defaultAvatarPath: String? = null
+    private var allAvatarPaths: List<String> = emptyList()
     private lateinit var playerAdapter: PlayerSetupAdapter
 
     companion object {
@@ -36,7 +37,8 @@ class SetupGameActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySetupGameBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        defaultAvatarPath = resolveDefaultAvatarPath()
+        allAvatarPaths = resolveAllAvatarPaths()
+        defaultAvatarPath = allAvatarPaths.firstOrNull()
         setupActionBar()
         initPlayers()
         setupRecyclerView()
@@ -62,7 +64,7 @@ class SetupGameActivity : AppCompatActivity() {
                 PlayerSetupModel(
                     id = i + 1,
                     name = "Player ${i + 1}",
-                    avatarPath = defaultAvatarPath
+                    avatarPath = avatarForIndex(i)
                 )
             )
         }
@@ -128,7 +130,7 @@ class SetupGameActivity : AppCompatActivity() {
                     PlayerSetupModel(
                         id = newId,
                         name = "Player $newId",
-                        avatarPath = defaultAvatarPath
+                        avatarPath = avatarForIndex(players.size)
                     )
                 )
                 playerAdapter.notifyItemInserted(players.size - 1)
@@ -145,10 +147,14 @@ class SetupGameActivity : AppCompatActivity() {
                 Toast.makeText(this, "Please select a killer first", Toast.LENGTH_SHORT).show()
                 return@setOnSingleClick
             }
-            startActivity(Intent(this, ChooseNumberActivity::class.java).apply {
-                putExtra(ChooseNumberActivity.EXTRA_MAP, mapOption.mapIndex)
-                putExtra(ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH, killerPath)
-            })
+            ChooseModeSetupDialog(this) { isManual ->
+                GameSession.setup(players.toList(), mapOption.mapIndex, killerPath)
+                if (isManual) {
+                    startActivity(Intent(this, ChooseNumberMultiActivity::class.java))
+                } else {
+                    startActivity(Intent(this, PlayingMultiActivity::class.java))
+                }
+            }.show()
         }
     }
 
@@ -167,11 +173,14 @@ class SetupGameActivity : AppCompatActivity() {
         binding.tvPlayerCount.text = players.size.toString()
     }
 
-    private fun resolveDefaultAvatarPath(): String? =
-        assets.list("avatar")
-            ?.sortedBy { it.substringBeforeLast(".").toIntOrNull() ?: Int.MAX_VALUE }
-            ?.firstOrNull()
-            ?.let { "avatar/$it" }
+    private fun resolveAllAvatarPaths(): List<String> =
+        (assets.list("avatar") ?: emptyArray())
+            .sortedBy { it.substringBeforeLast(".").toIntOrNull() ?: Int.MAX_VALUE }
+            .map { "avatar/$it" }
+
+    private fun avatarForIndex(index: Int): String? =
+        if (allAvatarPaths.isEmpty()) null
+        else allAvatarPaths[index % allAvatarPaths.size]
 
     private fun updateMapHexagon(mapOption: MapOption) {
         try {

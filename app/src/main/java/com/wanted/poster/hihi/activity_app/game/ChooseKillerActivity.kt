@@ -4,6 +4,10 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.wanted.poster.hihi.activity_app.adapter.KillerAdapter
 import com.wanted.poster.hihi.core.extensions.handleBackLeftToRight
 import com.wanted.poster.hihi.core.extensions.hideNavigation
@@ -46,19 +50,13 @@ class ChooseKillerActivity : AppCompatActivity() {
                 ?: killerList[0]
             selectedKillerAssetPath = initialItem.imageAssetPath
             binding.tvNameChooseKiller.text = initialItem.name
-            assets.open(initialItem.imageAssetPath).use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                binding.ivKillerShow.setImageBitmap(bitmap)
-            }
+            loadKillerPreview(initialItem.imageAssetPath)
         }
 
         val adapter = KillerAdapter(killerList.toMutableList()) { killerItem ->
             selectedKillerAssetPath = killerItem.imageAssetPath
             binding.tvNameChooseKiller.text = killerItem.name
-            assets.open(killerItem.imageAssetPath).use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                binding.ivKillerShow.setImageBitmap(bitmap)
-            }
+            loadKillerPreview(killerItem.imageAssetPath)
         }
         binding.rvKiller.adapter = adapter
         binding.viewKillerScrollIndicator.attachTo(binding.rvKiller)
@@ -69,6 +67,16 @@ class ChooseKillerActivity : AppCompatActivity() {
                 putExtra(ChooseMapActivity.EXTRA_KILLER_ASSET_PATH, selectedKillerAssetPath)
             }
             startActivity(intent)
+        }
+    }
+
+    private fun loadKillerPreview(assetPath: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val bmp = withContext(Dispatchers.IO) {
+                try { assets.open(assetPath).use { BitmapFactory.decodeStream(it) } }
+                catch (_: Exception) { null }
+            }
+            binding.ivKillerShow.setImageBitmap(bmp)
         }
     }
 

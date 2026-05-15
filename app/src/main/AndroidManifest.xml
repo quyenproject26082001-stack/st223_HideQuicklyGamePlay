@@ -49,6 +49,14 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".activity_app.game.ChooseNumberMultiActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".activity_app.game.PlayingMultiActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activity_app.oldwest.OldWestActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

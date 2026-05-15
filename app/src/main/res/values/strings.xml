@@ -150,4 +150,16 @@
     <string name="start_play">START PLAY</string>
     <string name="tab_any">Any</string>
     <string name="tab_country">Country</string>
+    <string name="choose_mode_panel">CHOOSE MODE</string>
+    <string name="mode_manual">MANUAL</string>
+    <string name="mode_random">RANDOM</string>
+    <string name="choose_your_spot">CHOOSE YOUR SPOT</string>
+    <string name="confirm_spot">CONFIRM</string>
+    <string name="game_over">GAME OVER</string>
+    <string name="result_survived">SURVIVED</string>
+    <string name="result_caught">CAUGHT</string>
+    <string name="home">HOME</string>
+    <string name="pick_your_starting_hideout">PICK YOUR STARTING HIDEOUT</string>
+    <string name="manual">MANUAL</string>
+    <string name="auto_deploy_to_a_secret_location"><![CDATA[ AUTO-DEPLOY TO A SECRET LOCATION]]></string>
 </resources>

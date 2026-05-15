@@ -9,6 +9,10 @@ import com.wanted.poster.hihi.core.base.BaseDialog
 import com.wanted.poster.hihi.core.extensions.setOnSingleClick
 import com.wanted.poster.hihi.data.model.KillerModel
 import com.wanted.poster.hihi.databinding.DialogChooseKillerSetupBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ChooseKillerSetupDialog(
     context: Context,
@@ -35,17 +39,13 @@ class ChooseKillerSetupDialog(
             val first = killerList[0]
             selectedKillerPath = first.imageAssetPath
             binding.tvKillerName.text = first.name
-            context.assets.open(first.imageAssetPath).use {
-                binding.ivKillerShow.setImageBitmap(BitmapFactory.decodeStream(it))
-            }
+            loadKillerPreview(first.imageAssetPath)
         }
 
         val adapter = KillerAdapter(killerList.toMutableList()) { item ->
             selectedKillerPath = item.imageAssetPath
             binding.tvKillerName.text = item.name
-            context.assets.open(item.imageAssetPath).use {
-                binding.ivKillerShow.setImageBitmap(BitmapFactory.decodeStream(it))
-            }
+            loadKillerPreview(item.imageAssetPath)
         }
         binding.rvKiller.adapter = adapter
         binding.viewKillerScrollIndicator.attachTo(binding.rvKiller)
@@ -58,6 +58,16 @@ class ChooseKillerSetupDialog(
                 onSelect(it)
                 dismiss()
             }
+        }
+    }
+
+    private fun loadKillerPreview(assetPath: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val bmp = withContext(Dispatchers.IO) {
+                try { context.assets.open(assetPath).use { BitmapFactory.decodeStream(it) } }
+                catch (_: Exception) { null }
+            }
+            binding.ivKillerShow.setImageBitmap(bmp)
         }
     }
 

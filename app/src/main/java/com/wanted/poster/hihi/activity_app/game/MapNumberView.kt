@@ -70,6 +70,12 @@ class MapNumberView @JvmOverloads constructor(
     // Rooms already visited/killed by killer → shown in gray
     val deadNumbers = mutableSetOf<Int>()
 
+    // Avatar bitmaps per displayNum (shown as circular avatar instead of number)
+    private val spawnAvatarBitmaps: MutableMap<Int, Bitmap?> = mutableMapOf()
+
+    // Numbers that are taken and not selectable (for ChooseNumberMulti)
+    var takenNumbers: Set<Int> = emptySet()
+
     // Sound indicator — shown at room position while killer is heading there
     private var soundIndicatorPos: PointF? = null
     private var soundRingPhase = 0f
@@ -147,6 +153,18 @@ class MapNumberView @JvmOverloads constructor(
     private val trailAndroidPath = Path()
 
     private val flashOverlayPaint = Paint().apply { color = Color.RED }
+
+    private val avatarBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFCC00")
+        style = Paint.Style.STROKE
+        strokeWidth = 4f
+    }
+    private val avatarDeadBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#99888888")
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+    }
+    private val avatarClipPath = Path()
 
     private val soundRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -331,12 +349,23 @@ class MapNumberView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setSpawnAvatarBitmap(displayNum: Int, bitmap: Bitmap?) {
+        spawnAvatarBitmaps[displayNum] = bitmap
+        invalidate()
+    }
+
+    fun clearSpawnAvatars() {
+        spawnAvatarBitmaps.clear()
+        invalidate()
+    }
+
     fun clearGameState() {
         killerTrail = emptyList()
         deadNumbers.clear()
         killerRevealedNumber = -1
         resetKillerPos()
         clearSoundIndicator()
+        // Don't clear spawnAvatarBitmaps — caller re-sets them after clearGameState
     }
 
     fun setDebugCollision(bitmap: Bitmap?) {
@@ -462,60 +491,63 @@ class MapNumberView @JvmOverloads constructor(
             val right = cx + badgeWidth / 2f
             val bottom = cy + badgeHeight / 2f
 
-            if (isChoosePhase) {
-                val bg = if (isPlayerChoice) chooseNumberSelectedBgPaint else chooseNumberBgPaint
-                if (isPlayerChoice) {
-                    chooseNumberSelectedBgPaint.shader = LinearGradient(
-                        cx,
-                        top,
-                        cx,
-                        bottom,
-                        Color.parseColor("#8ABABD"),
-                        Color.parseColor("#031210"),
-                        Shader.TileMode.CLAMP
+            val avatarBitmap = spawnAvatarBitmaps[num]
+            if (avatarBitmap != null) {
+                // Draw circular avatar instead of number
+                val r = radius()
+                drawSpawnAvatar(canvas, cx, cy, r, avatarBitmap, isDead)
+                if (!isChoosePhase && isDead && deadMarkerBitmap != null) {
+                    val sz = r * 0.65f
+                    canvas.drawBitmap(deadMarkerBitmap, null, RectF(cx - sz/2, cy - sz/2, cx + sz/2, cy + sz/2), null)
+                }
+            } else {
+                if (isChoosePhase) {
+                    val bg = if (isPlayerChoice) chooseNumberSelectedBgPaint else chooseNumberBgPaint
+                    if (isPlayerChoice) {
+                        chooseNumberSelectedBgPaint.shader = LinearGradient(
+                            cx, top, cx, bottom,
+                            Color.parseColor("#8ABABD"),
+                            Color.parseColor("#031210"),
+                            Shader.TileMode.CLAMP
+                        )
+                    } else {
+                        chooseNumberSelectedBgPaint.shader = null
+                    }
+                    canvas.drawRoundRect(left, top, right, bottom, badgeRadius, badgeRadius, bg)
+                    if (isPlayerChoice) {
+                        canvas.drawRoundRect(left, top, right, bottom, badgeRadius, badgeRadius, chooseNumberSelectedBorderPaint)
+                    }
+                }
+
+                textPaint.color = when {
+                    isChoosePhase && takenNumbers.contains(num) -> Color.parseColor("#88888888")
+                    isChoosePhase -> Color.WHITE
+                    isLatestKill -> Color.parseColor("#E53935")
+                    isDead -> Color.parseColor("#AAAAAA")
+                    else -> Color.WHITE
+                }
+                val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2f
+                canvas.drawText(label, cx, textY, numberStrokePaint)
+                canvas.drawText(label, cx, textY, textPaint)
+
+                if (!isChoosePhase && isPlayerChoice) {
+                    textPaint.getTextBounds(label, 0, label.length, textBounds)
+                    val textTop = textY + textBounds.top
+                    val markerCenterX = cx + selectedMarkerOffsetX
+                    val markerTop = textTop - selectedMarkerHeight - selectedMarkerGap + selectedMarkerOffsetY
+                    selectedPlayerMarker?.setBounds(
+                        (markerCenterX - selectedMarkerWidth / 2f).toInt(),
+                        markerTop.toInt(),
+                        (markerCenterX + selectedMarkerWidth / 2f).toInt(),
+                        (markerTop + selectedMarkerHeight).toInt()
                     )
-                } else {
-                    chooseNumberSelectedBgPaint.shader = null
+                    selectedPlayerMarker?.draw(canvas)
                 }
-                canvas.drawRoundRect(left, top, right, bottom, badgeRadius, badgeRadius, bg)
-                if (isPlayerChoice) {
-                    canvas.drawRoundRect(left, top, right, bottom, badgeRadius, badgeRadius, chooseNumberSelectedBorderPaint)
+
+                if (!isChoosePhase && isDead && deadMarkerBitmap != null) {
+                    val deadHalf = deadMarkerSize / 2f
+                    canvas.drawBitmap(deadMarkerBitmap, null, RectF(cx - deadHalf, cy - deadHalf, cx + deadHalf, cy + deadHalf), null)
                 }
-            }
-
-            textPaint.color = when {
-                isChoosePhase -> Color.WHITE
-                isLatestKill -> Color.parseColor("#E53935")
-                isDead -> Color.parseColor("#AAAAAA")
-                else   -> Color.WHITE
-            }
-            val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2f
-            canvas.drawText(label, cx, textY, numberStrokePaint)
-            canvas.drawText(label, cx, textY, textPaint)
-
-            if (!isChoosePhase && isPlayerChoice) {
-                textPaint.getTextBounds(label, 0, label.length, textBounds)
-                val textTop = textY + textBounds.top
-                val markerCenterX = cx + selectedMarkerOffsetX
-                val markerTop = textTop - selectedMarkerHeight - selectedMarkerGap + selectedMarkerOffsetY
-                selectedPlayerMarker?.setBounds(
-                    (markerCenterX - selectedMarkerWidth / 2f).toInt(),
-                    markerTop.toInt(),
-                    (markerCenterX + selectedMarkerWidth / 2f).toInt(),
-                    (markerTop + selectedMarkerHeight).toInt()
-                )
-                selectedPlayerMarker?.draw(canvas)
-            }
-
-            if (!isChoosePhase && isDead && deadMarkerBitmap != null) {
-                val deadHalf = deadMarkerSize / 2f
-                val deadRect = RectF(
-                    cx - deadHalf,
-                    cy - deadHalf,
-                    cx + deadHalf,
-                    cy + deadHalf
-                )
-                canvas.drawBitmap(deadMarkerBitmap, null, deadRect, null)
             }
         }
 
@@ -524,6 +556,21 @@ class MapNumberView @JvmOverloads constructor(
             flashOverlayPaint.alpha = (flashAlpha * 255).toInt()
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), flashOverlayPaint)
         }
+    }
+
+    private fun drawSpawnAvatar(canvas: Canvas, cx: Float, cy: Float, r: Float, bitmap: Bitmap, isDead: Boolean) {
+        val bgPaintToUse = if (isDead) deadBgPaint else bgPaint
+        canvas.drawCircle(cx, cy, r, bgPaintToUse)
+
+        canvas.save()
+        avatarClipPath.reset()
+        avatarClipPath.addCircle(cx, cy, r * 0.93f, Path.Direction.CW)
+        canvas.clipPath(avatarClipPath)
+        canvas.drawBitmap(bitmap, null, RectF(cx - r * 0.93f, cy - r * 0.93f, cx + r * 0.93f, cy + r * 0.93f), null)
+        canvas.restore()
+
+        val borderPaintToUse = if (isDead) avatarDeadBorderPaint else avatarBorderPaint
+        canvas.drawCircle(cx, cy, r, borderPaintToUse)
     }
 
     private fun drawSoundIndicator(canvas: Canvas, pos: PointF) {
@@ -565,6 +612,7 @@ class MapNumberView @JvmOverloads constructor(
             val dx = event.x - nx(pos)
             val dy = event.y - ny(pos)
             if (dx * dx + dy * dy <= tapRadius * tapRadius) {
+                if (takenNumbers.contains(num)) return true // already taken, ignore tap
                 selectedNumber = num
                 onNumberSelected?.invoke(num)
                 invalidate()
