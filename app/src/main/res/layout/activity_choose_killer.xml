@@ -59,7 +59,7 @@
 
   <androidx.recyclerview.widget.RecyclerView
       android:layout_width="match_parent"
-      android:layout_height="80dp"
+      android:layout_height="85dp"
       app:layout_constraintTop_toBottomOf="@id/containerShowKiller"
       android:layout_marginStart="15dp"
       android:layout_marginEnd="10dp"
@@ -79,7 +79,7 @@
         android:id="@+id/viewKillerScrollIndicator"
         android:layout_width="313dp"
         android:layout_height="4dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="-12dp"
         app:layout_constraintTop_toBottomOf="@id/rvKiller"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -92,7 +92,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:background="@drawable/img_home_0"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="30dp"
+        android:layout_marginBottom="20dp"
         android:id="@+id/btnSelect"
         >
         

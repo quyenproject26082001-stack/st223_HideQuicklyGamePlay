@@ -6,68 +6,84 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipChildren="false"
         android:background="#80000000">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginVertical="48dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp">
+            android:layout_marginHorizontal="17dp"
+            android:clipChildren="false">
 
+            <!-- Background -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/img_bg_app">
+                android:layout_height="match_parent">
 
-                <FrameLayout
-                    android:id="@+id/flTitleMap"
-                    android:layout_width="200dp"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="16dp"
-                    android:background="@drawable/img_home_0"
-                    app:layout_constraintEnd_toEndOf="parent"
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/bg_dialog_choose_avatar" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:fontFamily="@font/tradewinds_regular"
-                        android:text="@string/choose_map_panel"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        app:outerStrokeColor="@color/black"
-                        app:outerStrokeWidth="2dp" />
-                </FrameLayout>
+            <!-- Title (floating above dialog) -->
+            <FrameLayout
+                android:id="@+id/flTitleMap"
+                android:layout_width="200dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="-28dp"
+                android:background="@drawable/bg_title_choose_avatar_dialog">
+
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/choose_map_panel"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:shadowColor="#80000000"
+                    android:shadowDy="6"
+                    app:outerStrokeColor="@color/white"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+            <!-- Content -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="20dp">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvMaps"
                     android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="400dp"
+                    android:layout_marginTop="36dp"
                     android:clipToPadding="false"
                     android:padding="4dp"
-                    app:layout_constraintBottom_toTopOf="@id/btnCancelMap"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/flTitleMap"
+                    app:layout_constraintTop_toTopOf="parent"
                     tools:listitem="@layout/item_map" />
 
                 <FrameLayout
                     android:id="@+id/btnCancelMap"
                     android:layout_width="130dp"
                     android:layout_height="52dp"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginStart="20dp"
                     android:background="@drawable/img_home_0"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/btnSelectMap"
                     app:layout_constraintHorizontal_chainStyle="spread_inside"
-                    app:layout_constraintStart_toStartOf="parent">
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rvMaps">
 
                     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                         android:layout_width="wrap_content"
@@ -85,12 +101,12 @@
                     android:id="@+id/btnSelectMap"
                     android:layout_width="130dp"
                     android:layout_height="52dp"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginEnd="20dp"
                     android:background="@drawable/img_home_0"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/btnCancelMap">
+                    app:layout_constraintStart_toEndOf="@id/btnCancelMap"
+                    app:layout_constraintTop_toBottomOf="@id/rvMaps">
 
                     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                         android:layout_width="wrap_content"
@@ -105,6 +121,6 @@
                 </FrameLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
     </FrameLayout>
 </layout>

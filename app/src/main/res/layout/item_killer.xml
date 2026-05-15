@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="60dp"
     android:layout_height="60dp"
-    android:layout_margin="5dp"
-    >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_margin="5dp">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -15,7 +15,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:cardCornerRadius="5dp"
+            tools:visibility="visible"
             app:strokeColor="#ABABAB"
+            android:layout_margin="2dp"
             app:strokeWidth="2dp">
 
 
@@ -39,7 +41,7 @@
             android:layout_height="match_parent"
             android:clickable="false"
             android:focusable="false"
-            android:visibility="gone"
-            android:background="@drawable/overlay_killer_selected"/>
+            android:visibility="visible"
+            android:background="@drawable/overlay_item_killer_selected"/>
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

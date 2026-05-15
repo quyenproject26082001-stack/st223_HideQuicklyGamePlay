@@ -1,6 +1,7 @@
 package com.wanted.poster.hihi.activity_app.game
 
 import android.content.Context
+import android.graphics.Color
 import android.view.Gravity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.wanted.poster.hihi.R
@@ -33,14 +34,14 @@ class ChooseAvatarDialog(
 
     private val flagItems: List<AvatarGridAdapter.AvatarItem> by lazy {
         listOf(
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_english),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_french),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_germani),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_hindi),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_indo),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_portugeese),
-            AvatarGridAdapter.AvatarItem.Flag(R.drawable.ic_flag_spanish)
-        )
+            "us", "gb", "fr", "de", "it", "es", "pt", "vn", "cn", "jp",
+            "kr", "in", "br", "ru", "au", "ca", "mx", "nl", "tr", "sa",
+            "ar", "th", "id", "ph", "my", "sg", "eg", "ng", "za", "pk",
+            "bd", "ir", "iq", "ae", "il", "pl", "se", "no", "dk", "fi",
+            "ch", "at", "be", "cz", "hu", "ro", "gr", "ua", "nz", "cl",
+            "co", "pe", "ve", "ec", "bo", "uy", "py", "kz", "uz", "mm",
+            "kh", "la", "np", "lk", "tw", "hk"
+        ).map { AvatarGridAdapter.AvatarItem.Asset("flags/$it.png") }
     }
 
     override fun initView() {
@@ -61,16 +62,24 @@ class ChooseAvatarDialog(
 
     private fun showTab(isAny: Boolean) {
         isAnyTab = isAny
+        val strokePx = 2f * context.resources.displayMetrics.density
+        val shadowColor = 0x80000000.toInt()
         if (isAny) {
-            binding.tabAny.setBackgroundResource(R.drawable.bg_tab_selected)
-            binding.tabAny.setTextColor(0xFF000000.toInt())
-            binding.tabCountry.background = null
-            binding.tabCountry.setTextColor(0xCCFFFFFF.toInt())
+            binding.bgSelected.setBackgroundResource(R.drawable.bg_choose_avatar_selected_any)
+            binding.tabAny.setTextColor(Color.BLACK)
+            binding.tabAny.setDoubleStroke(Color.WHITE, strokePx, Color.TRANSPARENT, 0f)
+            binding.tabAny.setShadowLayer(0f, 0f, 6f, shadowColor)
+            binding.tabCountry.setTextColor(Color.WHITE)
+            binding.tabCountry.setDoubleStroke(Color.BLACK, strokePx, Color.TRANSPARENT, 0f)
+            binding.tabCountry.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
         } else {
-            binding.tabCountry.setBackgroundResource(R.drawable.bg_tab_selected)
-            binding.tabCountry.setTextColor(0xFF000000.toInt())
-            binding.tabAny.background = null
-            binding.tabAny.setTextColor(0xCCFFFFFF.toInt())
+            binding.bgSelected.setBackgroundResource(R.drawable.bg_choose_avatar_selected_country)
+            binding.tabCountry.setTextColor(Color.BLACK)
+            binding.tabCountry.setDoubleStroke(Color.WHITE, strokePx, Color.TRANSPARENT, 0f)
+            binding.tabCountry.setShadowLayer(0f, 0f, 6f, shadowColor)
+            binding.tabAny.setTextColor(Color.WHITE)
+            binding.tabAny.setDoubleStroke(Color.BLACK, strokePx, Color.TRANSPARENT, 0f)
+            binding.tabAny.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT)
         }
         selectedAvatarPath = null
         val items = if (isAny) anyItems else flagItems

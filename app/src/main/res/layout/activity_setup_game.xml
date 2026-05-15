@@ -213,7 +213,7 @@
             android:shadowColor="#80000000"
             android:shadowDy="6"
             android:shadowRadius="0.01"
-            android:text="@string/start_play"
+            android:text="@string/next"
             android:textColor="@color/white"
             android:textSize="24sp"
             app:outerStrokeColor="@color/black"

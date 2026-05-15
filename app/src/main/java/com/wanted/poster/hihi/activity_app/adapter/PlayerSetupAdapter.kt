@@ -4,12 +4,14 @@ import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.wanted.poster.hihi.R
 import com.wanted.poster.hihi.activity_app.game.PlayerSetupModel
 import com.wanted.poster.hihi.core.extensions.setOnSingleClick
 import com.wanted.poster.hihi.databinding.ItemPlayerSetupBinding
 
 class PlayerSetupAdapter(
     private val players: MutableList<PlayerSetupModel>,
+    private val defaultAvatarPath: String?,
     private val onAvatarClick: (Int) -> Unit,
     private val onEditClick: (Int) -> Unit,
     private val onDeleteClick: (Int) -> Unit
@@ -34,7 +36,7 @@ class PlayerSetupAdapter(
         holder.binding.tvPlayerNumber.text = (position + 1).toString()
         holder.binding.tvPlayerName.text = player.name
 
-        loadAvatar(holder, player.avatarPath)
+        loadAvatar(holder, player.avatarPath ?: defaultAvatarPath)
 
         holder.binding.flAvatar.setOnSingleClick {
             val pos = holder.bindingAdapterPosition
@@ -57,10 +59,14 @@ class PlayerSetupAdapter(
     private fun loadAvatar(holder: ViewHolder, avatarPath: String?) {
         val ctx = holder.itemView.context
         when {
-            avatarPath == null -> holder.binding.ivAvatar.setImageBitmap(null)
+            avatarPath == null -> holder.binding.ivAvatar.setImageResource(R.drawable.avatar)
             avatarPath.startsWith("flag:") -> {
                 val resId = avatarPath.removePrefix("flag:").toIntOrNull()
-                if (resId != null) holder.binding.ivAvatar.setImageResource(resId)
+                if (resId != null) {
+                    holder.binding.ivAvatar.setImageResource(resId)
+                } else {
+                    holder.binding.ivAvatar.setImageResource(R.drawable.avatar)
+                }
             }
             else -> {
                 try {
@@ -68,7 +74,7 @@ class PlayerSetupAdapter(
                         holder.binding.ivAvatar.setImageBitmap(BitmapFactory.decodeStream(stream))
                     }
                 } catch (_: Exception) {
-                    holder.binding.ivAvatar.setImageBitmap(null)
+                    holder.binding.ivAvatar.setImageResource(R.drawable.avatar)
                 }
             }
         }

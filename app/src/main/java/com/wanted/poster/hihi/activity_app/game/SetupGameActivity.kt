@@ -23,6 +23,7 @@ class SetupGameActivity : AppCompatActivity() {
     private val players = mutableListOf<PlayerSetupModel>()
     private var selectedMapOption: MapOption? = null
     private var selectedKillerPath: String? = null
+    private var defaultAvatarPath: String? = null
     private lateinit var playerAdapter: PlayerSetupAdapter
 
     companion object {
@@ -35,6 +36,7 @@ class SetupGameActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySetupGameBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        defaultAvatarPath = resolveDefaultAvatarPath()
         setupActionBar()
         initPlayers()
         setupRecyclerView()
@@ -56,7 +58,13 @@ class SetupGameActivity : AppCompatActivity() {
 
     private fun initPlayers() {
         repeat(DEFAULT_PLAYER_COUNT) { i ->
-            players.add(PlayerSetupModel(id = i + 1, name = "Player ${i + 1}"))
+            players.add(
+                PlayerSetupModel(
+                    id = i + 1,
+                    name = "Player ${i + 1}",
+                    avatarPath = defaultAvatarPath
+                )
+            )
         }
         updatePlayerCount()
     }
@@ -64,6 +72,7 @@ class SetupGameActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         playerAdapter = PlayerSetupAdapter(
             players = players,
+            defaultAvatarPath = defaultAvatarPath,
             onAvatarClick = { index ->
                 ChooseAvatarDialog(this) { avatarPath ->
                     players[index].avatarPath = avatarPath
@@ -115,7 +124,13 @@ class SetupGameActivity : AppCompatActivity() {
         binding.btnPlus.setOnSingleClick {
             if (players.size < MAX_PLAYERS) {
                 val newId = players.size + 1
-                players.add(PlayerSetupModel(newId, "Player $newId"))
+                players.add(
+                    PlayerSetupModel(
+                        id = newId,
+                        name = "Player $newId",
+                        avatarPath = defaultAvatarPath
+                    )
+                )
                 playerAdapter.notifyItemInserted(players.size - 1)
                 updatePlayerCount()
             }
@@ -151,6 +166,12 @@ class SetupGameActivity : AppCompatActivity() {
     private fun updatePlayerCount() {
         binding.tvPlayerCount.text = players.size.toString()
     }
+
+    private fun resolveDefaultAvatarPath(): String? =
+        assets.list("avatar")
+            ?.sortedBy { it.substringBeforeLast(".").toIntOrNull() ?: Int.MAX_VALUE }
+            ?.firstOrNull()
+            ?.let { "avatar/$it" }
 
     private fun updateMapHexagon(mapOption: MapOption) {
         try {

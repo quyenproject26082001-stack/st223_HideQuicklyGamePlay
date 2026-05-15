@@ -3,33 +3,66 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp">
+    android:layout_margin="11dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <ImageView
-            android:id="@+id/ivAvatarItem"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/containerItemAvatarGrid"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:scaleType="centerCrop"
-            app:layout_constraintDimensionRatio="1:1"
+            app:strokeColor="#000000"
+            app:cardCornerRadius="4dp"
+            android:layout_margin="2dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <View
+            <ImageView
+                android:id="@+id/ivAvatarItem"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <FrameLayout
             android:id="@+id/viewOverlay"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="@drawable/overlay_killer_selected"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/ivAvatarItem"
-            app:layout_constraintEnd_toEndOf="@id/ivAvatarItem"
-            app:layout_constraintStart_toStartOf="@id/ivAvatarItem"
-            app:layout_constraintTop_toTopOf="@id/ivAvatarItem" />
+            android:layout_marginStart="-2dp"
+            android:layout_marginEnd="-2dp"
+            android:layout_marginTop="-2dp"
+            android:layout_marginBottom="-2dp"
 
+            app:layout_constraintBottom_toBottomOf="@id/containerItemAvatarGrid"
+            app:layout_constraintEnd_toEndOf="@id/containerItemAvatarGrid"
+            app:layout_constraintStart_toStartOf="@id/containerItemAvatarGrid"
+            app:layout_constraintTop_toTopOf="@id/containerItemAvatarGrid"
+            >
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/overlay_killer_selected"
+                android:visibility="visible" />
+
+            <ImageView
+                android:layout_width="33dp"
+                android:layout_height="30dp"
+                android:layout_gravity="end"
+                android:layout_margin="5dp"
+                android:background="@drawable/ic_done"
+
+                />
+        </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>

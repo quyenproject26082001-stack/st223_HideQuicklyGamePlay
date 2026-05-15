@@ -28,6 +28,7 @@ class ChooseKillerActivity : AppCompatActivity() {
 
         setContentView(binding.root)
         setupActionBar()
+        selectedKillerAssetPath = intent.getStringExtra(ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH)
 
 
         val files = assets.list("killer_removebg") ?: emptyArray()
@@ -41,10 +42,11 @@ class ChooseKillerActivity : AppCompatActivity() {
         }
 
         if (killerList.isNotEmpty()) {
-            val firstItem = killerList[0]
-            selectedKillerAssetPath = firstItem.imageAssetPath
-            binding.tvNameChooseKiller.text = firstItem.name
-            assets.open(firstItem.imageAssetPath).use { inputStream ->
+            val initialItem = killerList.firstOrNull { it.imageAssetPath == selectedKillerAssetPath }
+                ?: killerList[0]
+            selectedKillerAssetPath = initialItem.imageAssetPath
+            binding.tvNameChooseKiller.text = initialItem.name
+            assets.open(initialItem.imageAssetPath).use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 binding.ivKillerShow.setImageBitmap(bitmap)
             }

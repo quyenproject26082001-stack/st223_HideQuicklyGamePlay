@@ -6,43 +6,61 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipChildren="false"
         android:background="#80000000">
 
-        <com.google.android.material.card.MaterialCardView
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginVertical="48dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp">
+            android:layout_marginHorizontal="17dp"
+            android:clipChildren="false">
 
+            <!-- Background -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/img_bg_app">
+                android:layout_height="match_parent">
 
-                <FrameLayout
-                    android:id="@+id/flTitleAvatar"
-                    android:layout_width="220dp"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="16dp"
-                    android:background="@drawable/img_home_0"
-                    app:layout_constraintEnd_toEndOf="parent"
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/bg_dialog_choose_avatar" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:fontFamily="@font/tradewinds_regular"
-                        android:text="@string/choose_avatar_panel"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        app:outerStrokeColor="@color/black"
-                        app:outerStrokeWidth="2dp" />
-                </FrameLayout>
+            <!-- Title (floating above dialog) -->
+            <FrameLayout
+                android:id="@+id/flTitleAvatar"
+                android:layout_width="240dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="-28dp"
+                android:background="@drawable/bg_title_choose_avatar_dialog">
+
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/choose_avatar_panel"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:shadowColor="#80000000"
+                    android:shadowDy="6"
+                    app:outerStrokeColor="@color/white"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+            <!-- Content -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:paddingBottom="20dp">
 
                 <!-- Tab bar -->
                 <FrameLayout
@@ -50,40 +68,47 @@
                     android:layout_width="0dp"
                     android:layout_height="40dp"
                     android:layout_marginHorizontal="24dp"
-                    android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_tab_bar"
-                    android:padding="4dp"
+                    android:layout_marginTop="36dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/flTitleAvatar">
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <LinearLayout
+                        android:id="@+id/bgSelected"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:background="@drawable/bg_choose_avatar_selected_any">
 
-                        <TextView
+                        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                             android:id="@+id/tabAny"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:background="@drawable/bg_tab_selected"
                             android:fontFamily="@font/tradewinds_regular"
                             android:gravity="center"
                             android:text="@string/tab_any"
                             android:textColor="@color/black"
-                            android:textSize="15sp" />
+                            android:shadowColor="#80000000"
+                            android:shadowDy="6"
+                            app:outerStrokeColor="@color/white"
+                            app:outerStrokeWidth="2dp"
+                            android:textSize="16sp" />
 
-                        <TextView
+                        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                             android:id="@+id/tabCountry"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:fontFamily="@font/tradewinds_regular"
                             android:gravity="center"
+                            android:shadowColor="#80000000"
+                            android:shadowDy="6"
+                            app:outerStrokeWidth="2dp"
+                            app:outerStrokeColor="@color/black"
                             android:text="@string/tab_country"
-                            android:textColor="#CCFFFFFF"
-                            android:textSize="15sp" />
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp" />
                     </LinearLayout>
 
                 </FrameLayout>
@@ -92,27 +117,29 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvAvatars"
                     android:layout_width="0dp"
-                    android:layout_height="0dp"
+                    android:layout_height="400dp"
                     android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="11dp"
                     android:clipToPadding="false"
-                    android:padding="4dp"
-                    app:layout_constraintBottom_toTopOf="@id/btnCancelAvatar"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/tabBar"
-                    tools:listitem="@layout/item_avatar_grid" />
+                    tools:listitem="@layout/item_avatar_grid"
+                    tools:itemCount="20"
+                    app:spanCount="3"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
 
                 <FrameLayout
                     android:id="@+id/btnCancelAvatar"
-                    android:layout_width="130dp"
+                    android:layout_width="148dp"
                     android:layout_height="52dp"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginStart="20dp"
                     android:background="@drawable/img_home_0"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/btnSaveAvatar"
                     app:layout_constraintHorizontal_chainStyle="spread_inside"
-                    app:layout_constraintStart_toStartOf="parent">
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rvAvatars">
 
                     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                         android:layout_width="wrap_content"
@@ -128,14 +155,14 @@
 
                 <FrameLayout
                     android:id="@+id/btnSaveAvatar"
-                    android:layout_width="130dp"
+                    android:layout_width="148dp"
                     android:layout_height="52dp"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginEnd="20dp"
                     android:background="@drawable/img_home_0"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/btnCancelAvatar">
+                    app:layout_constraintStart_toEndOf="@id/btnCancelAvatar"
+                    app:layout_constraintTop_toBottomOf="@id/rvAvatars">
 
                     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
                         android:layout_width="wrap_content"
@@ -150,6 +177,6 @@
                 </FrameLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
     </FrameLayout>
 </layout>

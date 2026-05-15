@@ -107,15 +107,24 @@ class PlayingActivity : AppCompatActivity() {
         val playerSpawnIdx = shownIndices.getOrNull(playerNumber - 1)
         val killerOrder = (0 until allSpawns.size).shuffled()
         val visitLimit = minOf(11, allSpawns.size)
-
-        val caughtAt = if (playerSpawnIdx != null) killerOrder.indexOf(playerSpawnIdx) else -1
-        val caught = caughtAt in 0 until visitLimit
-        val toVisit = killerOrder.take(if (caught) caughtAt + 1 else visitLimit)
+        val toVisit = killerOrder.take(visitLimit)
 
         lifecycleScope.launch {
             var currentPos = mapData.killerSpawn
             val trail = mutableListOf<PointF>()
             val killedSpawnIndices = mutableSetOf<Int>()
+            var playerCaught = false
+
+            fun markKilled(spawnIdx: Int, displayNum: Int?) {
+                if (displayNum != null) {
+                    binding.mapNumberView.killNumber(displayNum)
+                }
+                SfxPlayer.playKill(this@PlayingActivity)
+                killedSpawnIndices.add(spawnIdx)
+                if (spawnIdx == playerSpawnIdx || displayNum == playerNumber) {
+                    playerCaught = true
+                }
+            }
 
             for (spawnIdx in toVisit) {
                 waitIfPaused()
@@ -141,6 +150,7 @@ class PlayingActivity : AppCompatActivity() {
                     awaitAnimation(pathToSound)
                     currentPos = soundInfo.position
                     binding.mapNumberView.clearSoundIndicator()
+                    RoomSoundPlayer.release()
                     pausedDelay(400L)
 
                     // 100%: killer kills the nearest hider after hearing sound
@@ -161,14 +171,10 @@ class PlayingActivity : AppCompatActivity() {
                         appendTrail(trail, pathToHider)
                         binding.mapNumberView.setKillerTrail(trail.toList())
                         awaitAnimation(pathToHider)
-                        RoomSoundPlayer.release()
                         awaitKillShake()
-                        binding.mapNumberView.killNumber(nearestNum ?: 0)
-                        SfxPlayer.playKill(this@PlayingActivity)
-                        killedSpawnIndices.add(nearestIdx)
+                        markKilled(nearestIdx, nearestNum)
                         currentPos = nearestPos
-                    } else {
-                        RoomSoundPlayer.release()
+                        if (playerCaught) break
                     }
 
                     pausedDelay(500L)
@@ -189,9 +195,8 @@ class PlayingActivity : AppCompatActivity() {
 
                 if (displayNum != null) {
                     awaitKillShake()
-                    binding.mapNumberView.killNumber(displayNum)
-                    SfxPlayer.playKill(this@PlayingActivity)
-                    killedSpawnIndices.add(spawnIdx)
+                    markKilled(spawnIdx, displayNum)
+                    if (playerCaught) break
                 } else if (rng.nextFloat() < GameConfig.SWEEP_KILL_CHANCE) {
                     val nearestIdx = shownIndices
                         .filter { it !in killedSpawnIndices && it in allSpawns.indices }
@@ -211,9 +216,8 @@ class PlayingActivity : AppCompatActivity() {
                         awaitAnimation(sweepPath)
                         if (nearestNum != null) {
                             awaitKillShake()
-                            binding.mapNumberView.killNumber(nearestNum)
-                            SfxPlayer.playKill(this@PlayingActivity)
-                            killedSpawnIndices.add(nearestIdx)
+                            markKilled(nearestIdx, nearestNum)
+                            if (playerCaught) break
                         }
                         currentPos = nearestPos
                     }
@@ -227,7 +231,7 @@ class PlayingActivity : AppCompatActivity() {
             BgMusicPlayer.release()
             SfxPlayer.release()
             setStatusText(null)
-            showResultDialog(caught, playerNumber)
+            showResultDialog(playerCaught, playerNumber)
         }
     }
 
@@ -240,7 +244,9 @@ class PlayingActivity : AppCompatActivity() {
     }
 
     private suspend fun awaitKillShake() = suspendCancellableCoroutine<Unit> { cont ->
-        binding.mapNumberView.animateKillShake { cont.resume(Unit) }
+        binding.mapNumberView.animateKillShake {
+            if (cont.isActive) cont.resume(Unit)
+        }
     }
 
     private suspend fun awaitAnimation(path: List<PointF>, onCrossDoor: (() -> Unit)? = null) {
@@ -248,9 +254,12 @@ class PlayingActivity : AppCompatActivity() {
         suspendCancellableCoroutine<Unit> { cont ->
             binding.mapNumberView.animateKillerAlongPath(
                 path,
+                durationMs = GameConfig.killerAnimationDurationMs(path),
                 doorLines = mapData.doorLines,
                 onCrossDoor = onCrossDoor
-            ) { cont.resume(Unit) }
+            ) {
+                if (cont.isActive) cont.resume(Unit)
+            }
             cont.invokeOnCancellation { binding.mapNumberView.cancelAnimation() }
         }
     }
@@ -477,9 +486,9 @@ class PlayingActivity : AppCompatActivity() {
         playAgainButton.setOnClickListener {
             dialog.dismiss()
             startActivity(
-                Intent(this, ChooseMapActivity::class.java).apply {
+                Intent(this, ChooseKillerActivity::class.java).apply {
                     putExtra(
-                        ChooseMapActivity.EXTRA_KILLER_ASSET_PATH,
+                        ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH,
                         intent.getStringExtra(ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH)
                     )
                 }

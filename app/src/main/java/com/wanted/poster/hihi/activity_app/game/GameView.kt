@@ -168,7 +168,7 @@ class GameView @JvmOverloads constructor(
     }
 
     fun update() {
-        val speed = 0.004f
+        val speed = GameConfig.debugKillerStep()
         val dx = targetX - killer.x
         val dy = targetY - killer.y
         val dist = sqrt(dx * dx + dy * dy)
