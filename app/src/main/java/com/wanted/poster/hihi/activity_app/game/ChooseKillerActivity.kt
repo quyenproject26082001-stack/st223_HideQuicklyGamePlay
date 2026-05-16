@@ -45,20 +45,26 @@ class ChooseKillerActivity : AppCompatActivity() {
             )
         }
 
+        var initialSelectedPosition = 0
         if (killerList.isNotEmpty()) {
-            val initialItem = killerList.firstOrNull { it.imageAssetPath == selectedKillerAssetPath }
-                ?: killerList[0]
+            initialSelectedPosition = killerList.indexOfFirst { it.imageAssetPath == selectedKillerAssetPath }
+                .takeIf { it >= 0 } ?: 0
+            val initialItem = killerList[initialSelectedPosition]
             selectedKillerAssetPath = initialItem.imageAssetPath
             binding.tvNameChooseKiller.text = initialItem.name
             loadKillerPreview(initialItem.imageAssetPath)
         }
 
-        val adapter = KillerAdapter(killerList.toMutableList()) { killerItem ->
+        val adapter = KillerAdapter(
+            list = killerList.toMutableList(),
+            initialSelectedPosition = initialSelectedPosition
+        ) { killerItem ->
             selectedKillerAssetPath = killerItem.imageAssetPath
             binding.tvNameChooseKiller.text = killerItem.name
             loadKillerPreview(killerItem.imageAssetPath)
         }
         binding.rvKiller.adapter = adapter
+        binding.rvKiller.scrollToPosition(initialSelectedPosition)
         binding.viewKillerScrollIndicator.attachTo(binding.rvKiller)
 
 

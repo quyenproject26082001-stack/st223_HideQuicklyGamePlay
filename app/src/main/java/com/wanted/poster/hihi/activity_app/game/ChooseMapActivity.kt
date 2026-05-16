@@ -27,7 +27,6 @@ class ChooseMapActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityChooseMapBinding
 
-
     private val mapOptions: List<MapOption> by lazy {
         (1..47).map { i -> MapOption(mapIndex = i, label = "Map $i") }
     }
@@ -40,15 +39,16 @@ class ChooseMapActivity : AppCompatActivity() {
         setContentView(binding.root)
         setupActionBar()
         val killerAssetPath = intent.getStringExtra(EXTRA_KILLER_ASSET_PATH)
+        selectedOption = mapOptions.firstOrNull()
 
         val adapter = MapOptionAdapter(this, mapOptions) { option ->
             selectedOption = option
-            binding.btnSelect.isEnabled = true
-            binding.btnSelect.alpha = 1f
+            updateSelectButtonState()
         }
 
         binding.rvMaps.layoutManager = GridLayoutManager(this, 2)
         binding.rvMaps.adapter = adapter
+        updateSelectButtonState()
 
 
         binding.btnSelect.setOnClickListener {
@@ -58,6 +58,12 @@ class ChooseMapActivity : AppCompatActivity() {
                 putExtra(ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH, killerAssetPath)
             })
         }
+    }
+
+    private fun updateSelectButtonState() {
+        val isEnabled = selectedOption != null
+        binding.btnSelect.isEnabled = isEnabled
+        binding.btnSelect.alpha = if (isEnabled) 1f else 0.55f
     }
 
     private fun setupActionBar() {

@@ -36,11 +36,46 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+
+
+    <FrameLayout
+        android:id="@+id/layoutPlayerDead"
+        android:layout_width="240dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_player_dead"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
+       <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+           android:id="@+id/tvPlayerDeadName"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:textSize="16sp"
+           android:text="A has dead"
+           android:textColor="#FF0C10"
+           android:fontFamily="@font/tradewinds_regular"
+           android:shadowColor="#80000000"
+           app:outerStrokeWidth="3dp"
+           app:outerStrokeColor="@color/white"
+           android:gravity="center"
+           android:drawablePadding="7dp"
+           android:drawableEnd="@drawable/ic_skullcap"
+           android:layout_gravity="center"/>
+        
+    </FrameLayout>
+
     <View
         android:id="@+id/viewOverlayDim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#CC000000"
+        android:visibility="gone" />
+
+    <com.wanted.poster.hihi.activity_app.game.CountdownRadarView
+        android:id="@+id/countdownRadarView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone" />
 
     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
@@ -55,7 +90,7 @@
         android:text="PAUSED"
         android:textColor="@color/white"
         android:textSize="42sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:outerStrokeColor="@color/black"
         app:outerStrokeWidth="2dp" />
 

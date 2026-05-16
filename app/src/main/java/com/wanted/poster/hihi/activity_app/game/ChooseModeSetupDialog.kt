@@ -24,9 +24,9 @@ class ChooseModeSetupDialog(
     private var isManualSelected = true
 
     override fun initView() {
-        binding.itemModeManual.ivModeIcon.setImageResource(R.drawable.ic_mode_manual)
+        binding.itemModeManual.ivModeIcon.setImageResource(R.drawable.ic_manual)
         binding.itemModeManual.tvModeLabel.text = context.getString(R.string.mode_manual)
-        binding.itemModeRandom.ivModeIcon.setImageResource(R.drawable.ic_mode_random)
+        binding.itemModeRandom.ivModeIcon.setImageResource(R.drawable.ic_dices)
         binding.itemModeRandom.tvModeLabel.text = context.getString(R.string.mode_random)
         updateSelection()
     }

@@ -2,10 +2,7 @@ package com.wanted.poster.hihi.activity_app.game
 
 import android.app.Dialog
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.PointF
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.TypedValue
@@ -13,9 +10,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,15 +19,16 @@ import com.wanted.poster.hihi.R
 import com.wanted.poster.hihi.activity_app.main.MainActivity
 import com.wanted.poster.hihi.core.extensions.hideNavigation
 import com.wanted.poster.hihi.databinding.ActivityPlayingMultiBinding
-import com.wanted.poster.hihi.databinding.DialogEndGameMultiBinding
-import com.wanted.poster.hihi.databinding.ItemResultPlayerBinding
+import com.wanted.poster.hihi.databinding.DialogEndGameWinMultiBinding
+import com.wanted.poster.hihi.databinding.ItemSurvivorMultiBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.resume
 
 class PlayingMultiActivity : AppCompatActivity() {
 
@@ -41,12 +38,16 @@ class PlayingMultiActivity : AppCompatActivity() {
     private var shownIndices: List<Int> = emptyList()
     private var idxToDisplayNum: Map<Int, Int> = emptyMap()
 
-    private val rng = java.util.Random()
-    private val soundChance = 0.35f
-
     private var isPaused = false
     private var isCountdownRunning = false
     private var hasStartedReveal = false
+
+    private data class RankedPlayerResult(
+        val player: PlayerSetupModel,
+        val displayNum: Int,
+        val isSurvivor: Boolean,
+        val killOrder: Int?
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,13 +62,10 @@ class PlayingMultiActivity : AppCompatActivity() {
                 MapLoader.load(this@PlayingMultiActivity, GameSession.mapIndex)
             }
 
-            DoorSoundPlayer.preload(this@PlayingMultiActivity)
-            HighQuickGamePlayer.start(this@PlayingMultiActivity)
-            BgMusicPlayer.start(this@PlayingMultiActivity)
+            GameAudio.startGame(this@PlayingMultiActivity)
 
             val allSpawns = mapData.hiderSpawns
 
-            // Assign spawns for random mode (if not already assigned by ChooseNumberMulti)
             if (GameSession.shownSpawnIndices.isEmpty()) {
                 val maxSpots = minOf(10, allSpawns.size, GameSession.players.size)
                 val randomIndices = (0 until allSpawns.size).shuffled().take(maxSpots)
@@ -90,14 +88,42 @@ class PlayingMultiActivity : AppCompatActivity() {
                 mapData.killerSpawn
             )
             binding.mapNumberView.phase = MapNumberView.Phase.PLAYING
+            binding.mapNumberView.setDebugCollision(mapData.collisionBitmap)
 
-            // Load player avatars and set on spawn positions
             loadAndSetAvatars()
 
             setupPauseUi()
             binding.btnBack.setOnClickListener { finish() }
+            if (GameConfig.DEBUG_KILLER_COLLISION) {
+                binding.mapNumberView.setOnLongClickListener {
+                    binding.mapNumberView.showDebugCollision = !binding.mapNumberView.showDebugCollision
+                    binding.mapNumberView.invalidate()
+                    true
+                }
+            }
 
-            binding.root.post { startCountdownAndReveal() }
+            val killerSpawn = mapData.killerSpawn
+            val paths = withContext(Dispatchers.IO) {
+                val finder = KillerPathfinder(mapData.collisionBitmap)
+                coroutineScope {
+                    idxToDisplayNum.entries.map { (spawnIdx, displayNum) ->
+                        async {
+                            val target = allSpawns.getOrNull(spawnIdx) ?: killerSpawn
+                            val path = try {
+                                finder.findPath(killerSpawn.x, killerSpawn.y, target.x, target.y)
+                                    .ifEmpty { listOf(killerSpawn, target) }
+                            } catch (_: Exception) { listOf(killerSpawn, target) }
+                            displayNum to path
+                        }
+                    }.awaitAll().toMap()
+                }
+            }
+            binding.mapNumberView.setIntroEntrancePaths(paths)
+            binding.root.post {
+                binding.mapNumberView.animatePlayingSpawnsIntro {
+                    startCountdownAndReveal()
+                }
+            }
         }
     }
 
@@ -105,18 +131,8 @@ class PlayingMultiActivity : AppCompatActivity() {
         GameSession.playerAssignments.forEachIndexed { playerIdx, displayNum ->
             if (displayNum == -1) return@forEachIndexed
             val player = GameSession.players.getOrNull(playerIdx) ?: return@forEachIndexed
-            val bmp = withContext(Dispatchers.IO) { loadAvatarBitmap(player) }
+            val bmp = withContext(Dispatchers.IO) { AvatarLoader.load(this@PlayingMultiActivity, player) }
             binding.mapNumberView.setSpawnAvatarBitmap(displayNum, bmp)
-        }
-    }
-
-    private fun loadAvatarBitmap(player: PlayerSetupModel): Bitmap? {
-        val path = player.avatarPath ?: return null
-        return when {
-            path.startsWith("flag:") -> null
-            else -> try {
-                assets.open(path).use { BitmapFactory.decodeStream(it) }
-            } catch (_: Exception) { null }
         }
     }
 
@@ -125,150 +141,61 @@ class PlayingMultiActivity : AppCompatActivity() {
         hasStartedReveal = true
         binding.mapNumberView.clearGameState()
 
-        // Re-set avatars after clearGameState
-        lifecycleScope.launch {
-            loadAndSetAvatars()
-        }
+        lifecycleScope.launch { loadAndSetAvatars() }
 
         val allSpawns = mapData.hiderSpawns
         if (allSpawns.isEmpty()) {
-            showResultDialog(emptySet())
+            GameAudio.release()
+            showResultDialog(emptyList())
             return
         }
 
-        val killerOrder = (0 until allSpawns.size).shuffled()
-        val visitLimit = minOf(11, allSpawns.size)
-        val toVisit = killerOrder.take(visitLimit)
+        val caughtDisplayNums = mutableSetOf<Int>()
+        val killOrderDisplayNums = mutableListOf<Int>()
+        val assignedPlayerCount = GameSession.playerAssignments.count { it != -1 }
+        val maxSurvivors = minOf(3, (assignedPlayerCount - 1).coerceAtLeast(1))
+        val survivors = (1..maxSurvivors).random()
+        val killsNeededToFinish = (assignedPlayerCount - survivors).coerceAtLeast(0)
+
+        if (killsNeededToFinish == 0) {
+            GameAudio.release()
+            showResultDialog(emptyList())
+            return
+        }
+
+        val runner = KillerRunner(
+            mapData = mapData,
+            shownIndices = shownIndices,
+            idxToDisplayNum = idxToDisplayNum,
+            playerDisplayNums = GameSession.assignedDisplayNums(),
+            mapView = binding.mapNumberView,
+            context = this,
+            isPaused = { isPaused }
+        )
 
         lifecycleScope.launch {
-            var currentPos = mapData.killerSpawn
-            val trail = mutableListOf<PointF>()
-            val killedSpawnIndices = mutableSetOf<Int>()
-            val caughtDisplayNums = mutableSetOf<Int>()
-
-            fun markKilled(spawnIdx: Int, displayNum: Int?) {
-                if (displayNum != null) {
-                    binding.mapNumberView.killNumber(displayNum)
-                    caughtDisplayNums.add(displayNum)
-                }
-                SfxPlayer.playKill(this@PlayingMultiActivity)
-                killedSpawnIndices.add(spawnIdx)
-            }
-
-            for (spawnIdx in toVisit) {
-                waitIfPaused()
-                val spawnPos = allSpawns[spawnIdx]
-                val displayNum = idxToDisplayNum[spawnIdx]
-                val soundInfo = if (mapData.rooms.isNotEmpty() && rng.nextFloat() < soundChance) {
-                    mapData.rooms.random(rng.asKotlinRandom())
-                } else null
-
-                if (soundInfo != null) {
-                    waitIfPaused()
-                    RoomSoundPlayer.play(this@PlayingMultiActivity, soundInfo.type)
-                    binding.mapNumberView.showSoundIndicator(soundInfo.position)
-                    val pathToSound = withContext(Dispatchers.IO) { computePath(currentPos, soundInfo.position) }
-                    appendTrail(trail, pathToSound)
-                    binding.mapNumberView.setKillerTrail(trail.toList())
-                    awaitAnimation(pathToSound)
-                    currentPos = soundInfo.position
-                    binding.mapNumberView.clearSoundIndicator()
-                    RoomSoundPlayer.release()
-                    pausedDelay(400L)
-
-                    waitIfPaused()
-                    val nearestIdx = shownIndices
-                        .filter { it !in killedSpawnIndices && it in allSpawns.indices }
-                        .minByOrNull { idx ->
-                            val p = allSpawns[idx]
-                            val dx = p.x - currentPos.x; val dy = p.y - currentPos.y
-                            dx * dx + dy * dy
+            runner.run(
+                onKill = { _, displayNum ->
+                    if (displayNum != null && caughtDisplayNums.add(displayNum)) {
+                        killOrderDisplayNums.add(displayNum)
+                        val playerIdx = GameSession.playerAssignments.indexOfFirst { it == displayNum }
+                        val playerName = GameSession.players.getOrNull(playerIdx)?.name ?: ""
+                        binding.tvPlayerDeadName.text = getString(R.string.has_dead, playerName)
+                        binding.layoutPlayerDead.visibility = View.VISIBLE
+                        lifecycleScope.launch {
+                            delay(2500L)
+                            binding.layoutPlayerDead.visibility = View.GONE
                         }
-                    if (nearestIdx != null) {
-                        val nearestPos = allSpawns[nearestIdx]
-                        val nearestNum = idxToDisplayNum[nearestIdx]
-                        val path = withContext(Dispatchers.IO) { computePath(currentPos, nearestPos) }
-                        appendTrail(trail, path)
-                        binding.mapNumberView.setKillerTrail(trail.toList())
-                        awaitAnimation(path)
-                        awaitKillShake()
-                        markKilled(nearestIdx, nearestNum)
-                        currentPos = nearestPos
                     }
-                    pausedDelay(500L)
-                    continue
-                }
-
-                val path = withContext(Dispatchers.IO) { computePath(currentPos, spawnPos) }
-                appendTrail(trail, path)
-                binding.mapNumberView.setKillerTrail(trail.toList())
-                awaitAnimation(path, onCrossDoor = { DoorSoundPlayer.playRandom(this@PlayingMultiActivity) })
-                currentPos = spawnPos
-
-                if (displayNum != null) {
-                    awaitKillShake()
-                    markKilled(spawnIdx, displayNum)
-                } else if (rng.nextFloat() < GameConfig.SWEEP_KILL_CHANCE) {
-                    val nearestIdx = shownIndices
-                        .filter { it !in killedSpawnIndices && it in allSpawns.indices }
-                        .minByOrNull { idx ->
-                            val p = allSpawns[idx]
-                            val dx = p.x - currentPos.x; val dy = p.y - currentPos.y
-                            dx * dx + dy * dy
-                        }
-                    if (nearestIdx != null) {
-                        val nearestPos = allSpawns[nearestIdx]
-                        val nearestNum = idxToDisplayNum[nearestIdx]
-                        val sweepPath = withContext(Dispatchers.IO) { computePath(currentPos, nearestPos) }
-                        appendTrail(trail, sweepPath)
-                        binding.mapNumberView.setKillerTrail(trail.toList())
-                        awaitAnimation(sweepPath)
-                        if (nearestNum != null) {
-                            awaitKillShake()
-                            markKilled(nearestIdx, nearestNum)
-                        }
-                        currentPos = nearestPos
-                    }
-                }
-                pausedDelay(500L)
-            }
-
-            RoomSoundPlayer.release()
-            DoorSoundPlayer.release()
-            HighQuickGamePlayer.release()
-            BgMusicPlayer.release()
-            SfxPlayer.release()
-            showResultDialog(caughtDisplayNums)
+                },
+                shouldStop = { caughtDisplayNums.size >= killsNeededToFinish }
+            )
+            // Chờ scream kịp phát trước khi release() huỷ handler.
+            delay(450L)
+            GameAudio.release()
+            showResultDialog(killOrderDisplayNums)
         }
     }
-
-    private fun appendTrail(trail: MutableList<PointF>, path: List<PointF>) {
-        if (trail.isEmpty()) trail.addAll(path)
-        else trail.addAll(path.drop(1))
-    }
-
-    private suspend fun awaitKillShake() = suspendCancellableCoroutine<Unit> { cont ->
-        binding.mapNumberView.animateKillShake { if (cont.isActive) cont.resume(Unit) }
-    }
-
-    private suspend fun awaitAnimation(path: List<PointF>, onCrossDoor: (() -> Unit)? = null) {
-        waitIfPaused()
-        suspendCancellableCoroutine<Unit> { cont ->
-            binding.mapNumberView.animateKillerAlongPath(
-                path,
-                durationMs = GameConfig.killerAnimationDurationMs(path),
-                doorLines = mapData.doorLines,
-                onCrossDoor = onCrossDoor
-            ) { if (cont.isActive) cont.resume(Unit) }
-            cont.invokeOnCancellation { binding.mapNumberView.cancelAnimation() }
-        }
-    }
-
-    private fun computePath(from: PointF, to: PointF): List<PointF> =
-        try {
-            KillerPathfinder(mapData.collisionBitmap).findPath(from.x, from.y, to.x, to.y)
-                .ifEmpty { listOf(from, to) }
-        } catch (_: Exception) { listOf(from, to) }
 
     private fun setupPauseUi() {
         updatePauseUi()
@@ -277,12 +204,10 @@ class PlayingMultiActivity : AppCompatActivity() {
             isPaused = !isPaused
             if (isPaused) {
                 binding.mapNumberView.pauseAnimation()
-                RoomSoundPlayer.pause(); DoorSoundPlayer.pause()
-                HighQuickGamePlayer.pause(); BgMusicPlayer.pause()
+                GameAudio.pause()
             } else {
                 binding.mapNumberView.resumeAnimation()
-                RoomSoundPlayer.resume(); DoorSoundPlayer.resume()
-                HighQuickGamePlayer.resume(); BgMusicPlayer.resume()
+                GameAudio.resume()
             }
             updatePauseUi()
         }
@@ -304,70 +229,37 @@ class PlayingMultiActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun waitIfPaused() { while (isPaused) delay(100L) }
-
-    private suspend fun pausedDelay(ms: Long) {
-        var remaining = ms
-        while (remaining > 0L) {
-            waitIfPaused()
-            val step = minOf(100L, remaining)
-            delay(step)
-            remaining -= step
-        }
-    }
-
     private fun startCountdownAndReveal() {
         if (isCountdownRunning || hasStartedReveal) return
-        lifecycleScope.launch {
-            isCountdownRunning = true
-            updatePauseUi()
-            binding.viewOverlayDim.apply { alpha = 0f; visibility = View.VISIBLE }
-            binding.viewOverlayDim.animate().alpha(0.72f).setDuration(220L).start()
-
-            for (value in 3 downTo 1) {
-                animateCountdownValue(value)
-            }
-            binding.tvOverLay.animate().cancel()
-            binding.tvOverLay.animate().alpha(0f).setDuration(160L)
-                .withEndAction { binding.tvOverLay.visibility = View.GONE }.start()
-            binding.viewOverlayDim.animate().alpha(0f).setDuration(220L)
-                .withEndAction { binding.viewOverlayDim.visibility = View.GONE }.start()
-
+        isCountdownRunning = true
+        updatePauseUi()
+        binding.countdownRadarView.startCountdown(3) {
             isCountdownRunning = false
             updatePauseUi()
             startReveal()
         }
     }
 
-    private suspend fun animateCountdownValue(value: Int) = suspendCancellableCoroutine<Unit> { cont ->
-        binding.tvOverLay.animate().cancel()
-        binding.tvOverLay.apply {
-            text = value.toString()
-            visibility = View.VISIBLE
-            alpha = 0f; scaleX = 1.45f; scaleY = 1.45f
-            translationY = height * 0.04f
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 92f)
+    private fun showResultDialog(killOrderDisplayNums: List<Int>) {
+        val dialogBinding = DialogEndGameWinMultiBinding.inflate(layoutInflater)
+        val killOrderByDisplayNum = killOrderDisplayNums.withIndex().associate { (index, displayNum) ->
+            displayNum to index
         }
-        binding.tvOverLay.animate()
-            .alpha(1f).scaleX(1f).scaleY(1f).translationY(0f)
-            .setDuration(360L).setInterpolator(DecelerateInterpolator())
-            .withEndAction {
-                binding.tvOverLay.animate()
-                    .alpha(0f).scaleX(0.82f).scaleY(0.82f)
-                    .setDuration(240L).setInterpolator(AccelerateInterpolator())
-                    .withEndAction { if (cont.isActive) cont.resume(Unit) }.start()
-            }.start()
-    }
-
-    private fun showResultDialog(caughtDisplayNums: Set<Int>) {
-        val dialogBinding = DialogEndGameMultiBinding.inflate(layoutInflater)
-
-        // Build results: playerIndex → caught
-        val results = GameSession.players.mapIndexed { idx, player ->
+        val rankedResults = GameSession.players.mapIndexed { idx, player ->
             val displayNum = GameSession.playerAssignments.getOrElse(idx) { -1 }
-            val caught = displayNum != -1 && caughtDisplayNums.contains(displayNum)
-            Triple(player, displayNum, caught)
-        }
+            val killOrder = killOrderByDisplayNum[displayNum]
+            RankedPlayerResult(
+                player = player,
+                displayNum = displayNum,
+                isSurvivor = killOrder == null,
+                killOrder = killOrder
+            )
+        }.sortedWith(
+            compareByDescending<RankedPlayerResult> { it.isSurvivor }
+                .thenByDescending { it.killOrder ?: -1 }
+                .thenBy { if (it.displayNum == -1) Int.MAX_VALUE else it.displayNum }
+                .thenBy { it.player.name.lowercase() }
+        )
 
         val dialog = Dialog(this).apply {
             requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
@@ -379,23 +271,35 @@ class PlayingMultiActivity : AppCompatActivity() {
             }
         }
 
-        dialogBinding.rvResults.layoutManager = LinearLayoutManager(this)
-        dialogBinding.rvResults.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            override fun getItemCount() = results.size
-            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-                val b = ItemResultPlayerBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                return object : RecyclerView.ViewHolder(b.root) {}
+        class ResultViewHolder(val binding: ItemSurvivorMultiBinding) :
+            RecyclerView.ViewHolder(binding.root)
+
+        dialogBinding.rvSurvivors.layoutManager = LinearLayoutManager(this)
+        dialogBinding.rvSurvivors.adapter = object : RecyclerView.Adapter<ResultViewHolder>() {
+            override fun getItemCount() = rankedResults.size
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
+                val b = ItemSurvivorMultiBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                return ResultViewHolder(b)
             }
-            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                val (player, _, caught) = results[position]
-                val b = ItemResultPlayerBinding.bind(holder.itemView)
-                b.tvResultName.text = player.name
-                b.tvResultStatus.text = if (caught) getString(R.string.result_caught) else getString(R.string.result_survived)
-                b.tvResultStatus.setTextColor(if (caught) Color.parseColor("#FF5555") else Color.parseColor("#55FF55"))
-                // Load avatar
+            override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
+                val result = rankedResults[position]
+                val b = holder.binding
+                b.tvRank.text = (position + 1).toString()
+                b.tvName.text = result.player.name
+                b.tvStatus.text = getString(
+                    if (result.isSurvivor) R.string.result_survived else R.string.result_caught
+                )
+                b.tvStatus.setTextColor(
+                    ContextCompat.getColor(
+                        this@PlayingMultiActivity,
+                        if (result.isSurvivor) R.color.result_survived_green else R.color.color_app
+                    )
+                )
                 CoroutineScope(Dispatchers.Main).launch {
-                    val bmp = withContext(Dispatchers.IO) { loadAvatarBitmap(player) }
-                    if (bmp != null) b.ivResultAvatar.setImageBitmap(bmp)
+                    val bmp = withContext(Dispatchers.IO) {
+                        AvatarLoader.load(this@PlayingMultiActivity, result.player)
+                    }
+                    if (bmp != null) b.ivAvatar.setImageBitmap(bmp)
                 }
             }
         }
@@ -411,16 +315,13 @@ class PlayingMultiActivity : AppCompatActivity() {
         dialogBinding.btnPlayAgain.setOnClickListener {
             dialog.dismiss()
             startActivity(Intent(this, SetupGameActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                // Quay lại màn setup cũ trong task hiện tại để back từ action bar
+                // trở về Main thay vì thoát app vì task đã bị clear.
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             })
-            finish()
         }
 
         dialog.show()
-    }
-
-    private fun java.util.Random.asKotlinRandom() = object : kotlin.random.Random() {
-        override fun nextBits(bitCount: Int) = this@asKotlinRandom.nextInt().ushr(32 - bitCount)
     }
 
     private fun makeFullscreen() {
@@ -437,11 +338,7 @@ class PlayingMultiActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        HighQuickGamePlayer.release()
-        RoomSoundPlayer.release()
-        DoorSoundPlayer.release()
-        BgMusicPlayer.release()
-        SfxPlayer.release()
+        GameAudio.release()
         super.onDestroy()
     }
 }

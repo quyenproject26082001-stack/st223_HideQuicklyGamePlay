@@ -12,6 +12,7 @@ import com.wanted.poster.hihi.databinding.DialogChooseMapSetupBinding
 
 class ChooseMapSetupDialog(
     context: Context,
+    private val currentSelection: MapOption?,
     private val onSelect: (MapOption) -> Unit
 ) : BaseDialog<DialogChooseMapSetupBinding>(
     context,
@@ -31,11 +32,23 @@ class ChooseMapSetupDialog(
     }
 
     override fun initView() {
-        val adapter = MapOptionAdapter(context, mapOptions) { option ->
+        val initialSelectedPosition = mapOptions.indexOfFirst { option ->
+            option.mapIndex == currentSelection?.mapIndex
+        }.takeIf { it >= 0 } ?: 0
+
+        selectedOption = mapOptions.getOrNull(initialSelectedPosition)
+
+        val adapter = MapOptionAdapter(
+            ctx = context,
+            items = mapOptions,
+            onSelected = { option ->
             selectedOption = option
-        }
+            },
+            initialSelectedPosition = initialSelectedPosition
+        )
         binding.rvMaps.layoutManager = GridLayoutManager(context, 2)
         binding.rvMaps.adapter = adapter
+        binding.rvMaps.scrollToPosition(initialSelectedPosition)
     }
 
     override fun initAction() {

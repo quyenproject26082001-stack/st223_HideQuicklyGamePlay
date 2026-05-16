@@ -6,9 +6,12 @@ import kotlin.math.sqrt
 
 class KillerPathfinder(collision: Bitmap) {
 
-    private val bmp: Bitmap = collision
-    private val W = bmp.width
-    private val H = bmp.height
+    private val W = collision.width
+    private val H = collision.height
+    // Trích xuất toàn bộ pixel ra IntArray một lần — truy cập mảng nhanh hơn getPixel() nhiều lần.
+    private val pixels = IntArray(W * H).also {
+        collision.getPixels(it, 0, W, 0, 0, W, H)
+    }
 
     private data class Node(
         val x: Int, val y: Int,
@@ -19,6 +22,7 @@ class KillerPathfinder(collision: Bitmap) {
         override fun compareTo(other: Node) = f.compareTo(other.f)
     }
 
+    // findPath không dùng state ngoài pixels (read-only) → thread-safe, có thể gọi song song.
     fun findPath(sx: Float, sy: Float, ex: Float, ey: Float): List<PointF> {
         val x0 = (sx * W).toInt().coerceIn(0, W - 1)
         val y0 = (sy * H).toInt().coerceIn(0, H - 1)
@@ -57,15 +61,14 @@ class KillerPathfinder(collision: Bitmap) {
                 }
             }
         }
-        // No path: fallback to straight line
         return listOf(PointF(sx, sy), PointF(ex, ey))
     }
 
     private fun walkable(x: Int, y: Int): Boolean {
-        val px = bmp.getPixel(x, y)
-        if (Color.alpha(px) < 80) return true        // transparent → walkable
+        val px = pixels[y * W + x]
+        if (Color.alpha(px) < 80) return true
         val r = Color.red(px); val g = Color.green(px); val b = Color.blue(px)
-        return r > 80 || g > 80 || b > 80            // bright-colored pixel → walkable
+        return r > 80 || g > 80 || b > 80
     }
 
     private fun h(x: Int, y: Int, ex: Int, ey: Int): Float {
@@ -80,7 +83,6 @@ class KillerPathfinder(collision: Bitmap) {
             raw.addFirst(PointF(n.x.toFloat() / W, n.y.toFloat() / H))
             n = n.parent
         }
-        // Thin to ~30 waypoints for smooth animation
         val step = maxOf(1, raw.size / 30)
         val out = mutableListOf(raw.first())
         var i = step

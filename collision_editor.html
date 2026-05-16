@@ -71,6 +71,8 @@
   input[type=range]  { width: 100%; }
   input[type=number] { width: 100%; padding: 3px; background: #1a1a2e; border: 1px solid #333;
     border-radius: 4px; color: #eee; font-size: 11px; }
+  .ratio-grid { display:grid; grid-template-columns: 1fr 72px; gap:4px 6px; align-items:center; }
+  .hint-box { margin-top:6px; padding:6px; border-radius:4px; background:#1a1a2e; color:#bbb; font-size:10px; line-height:1.5; }
 
   /* XML popup */
   #xmlOutput { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -121,6 +123,21 @@
     </div>
   </div>
 
+  <div class="section">
+    <label>Tỷ lệ stroke theo viewport ngắn</label>
+    <div class="ratio-grid">
+      <span>Wall / Door ratio</span>
+      <input type="number" id="wallRatio" value="0.0195" step="0.0001">
+      <span>Dot / Spawn ratio</span>
+      <input type="number" id="dotRatio" value="0.0586" step="0.0001">
+    </div>
+    <div id="ratioHint" class="hint-box"></div>
+    <div class="tool-row" style="margin-top:6px">
+      <button class="btn-mode" onclick="applySuggestedSizeToPreset()">Áp cho preset</button>
+      <button class="btn-mode" onclick="normalizeItemsByRatio()">Scale items</button>
+    </div>
+  </div>
+
   <!-- Palette -->
   <div class="section">
     <label>Palette nhanh (click để chọn)</label>
@@ -148,7 +165,7 @@
     </div>
     <div id="lineSizeRow" style="display:none;margin-top:5px">
       <label>Độ dày tường: <span id="lineVal">20</span>dp</label>
-      <input type="range" id="lineSize" min="5" max="80" value="20"
+      <input type="range" id="lineSize" min="5" max="200" value="20"
         oninput="document.getElementById('lineVal').textContent=this.value">
     </div>
     <div id="eraserSizeRow" style="display:none;margin-top:5px">
@@ -259,6 +276,78 @@ const PRESETS = [
 ];
 
 let activePreset = PRESETS[0];
+const WALL_RATIO_DEFAULT = 20 / 1024;
+const DOT_RATIO_DEFAULT = 60 / 1024;
+
+function ratioBaseSize() {
+  return Math.min(vpW || 1024, vpH || 1024) || 1024;
+}
+
+function getWallRatio() {
+  return parseFloat(document.getElementById('wallRatio').value) || WALL_RATIO_DEFAULT;
+}
+
+function getDotRatio() {
+  return parseFloat(document.getElementById('dotRatio').value) || DOT_RATIO_DEFAULT;
+}
+
+function suggestedWallWidth() {
+  return Math.max(5, Math.round(ratioBaseSize() * getWallRatio()));
+}
+
+function suggestedDotSize() {
+  return Math.max(12, Math.round(ratioBaseSize() * getDotRatio()));
+}
+
+function setLineSizeValue(value) {
+  const rounded = Math.round(value);
+  document.getElementById('lineSize').value = rounded;
+  document.getElementById('lineVal').textContent = rounded;
+}
+
+function syncPresetSizesFromRatio() {
+  const wallWidth = suggestedWallWidth();
+  const dotSize = suggestedDotSize();
+  PRESETS.forEach(p => {
+    if (p.tool === 'draw') p.width = wallWidth;
+    else p.size = dotSize;
+  });
+}
+
+function updateRatioHint() {
+  const base = ratioBaseSize();
+  document.getElementById('ratioHint').innerHTML =
+    `Base = min(viewport) = <b>${Math.round(base)}</b><br>` +
+    `Gợi ý wall/door = <b>${suggestedWallWidth()}dp</b><br>` +
+    `Gợi ý dot/spawn = <b>${suggestedDotSize()}dp</b>`;
+}
+
+function applySuggestedSizeToPreset() {
+  syncPresetSizesFromRatio();
+  if (activePreset.tool === 'draw') {
+    setLineSizeValue(activePreset.width || suggestedWallWidth());
+  }
+  updateRatioHint();
+  updateActiveInfo();
+  render();
+}
+
+function normalizeItemsByRatio() {
+  if (!items.length) return;
+  pushHistory();
+  syncPresetSizesFromRatio();
+  items = items.map(it => {
+    const preset = PRESETS.find(p => p.color === it.color);
+    if (!preset) return { ...it };
+    if (it.type === 'line' || it.type === 'polyline') {
+      return { ...it, width: preset.width || suggestedWallWidth() };
+    }
+    return { ...it, size: preset.size || suggestedDotSize() };
+  });
+  updateList();
+  updateRatioHint();
+  render();
+}
 
 function buildPalette() {
   const el = document.getElementById('palette');
@@ -286,8 +375,12 @@ function buildPalette() {
 
 function selectPreset(p) {
   activePreset = p;
+  syncPresetSizesFromRatio();
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('preset_' + p.id).classList.add('active');
+  if (p.tool === 'draw') {
+    setLineSizeValue(p.width || suggestedWallWidth());
+  }
   setTool(p.tool);
   updateActiveInfo();
 }
@@ -295,7 +388,10 @@ function selectPreset(p) {
 function updateActiveInfo() {
   document.getElementById('activeDot').style.background = activePreset.color;
   document.getElementById('activeLabel').textContent = activePreset.emoji + ' ' + activePreset.label;
-  document.getElementById('activeModeTag').textContent = '[' + tool + ']';
+  const sizeText = activePreset.tool === 'draw'
+    ? `${parseInt(document.getElementById('lineSize').value) || suggestedWallWidth()}dp`
+    : `${activePreset.size || suggestedDotSize()}dp`;
+  document.getElementById('activeModeTag').textContent = `[${tool}] ${sizeText}`;
 }
 
 // ─── Canvas setup ────────────────────────────────────────────────────────────
@@ -307,27 +403,37 @@ let bgImg = null, bgOpacity = 0.7;
 let currentMapIndex = 1;
 let imgDirHandle = null;   // FileSystemDirectoryHandle cho thư mục ảnh
 let xmlDirHandle = null;   // FileSystemDirectoryHandle cho thư mục drawable
-let items = [];      // {type:'line'|'dot', ...}
+let items = [];      // {type:'line'|'polyline'|'dot', ...}
 let selectedIdx = -1;
 let tool = 'draw';   // 'draw' | 'dot' | 'select'
 let drawing = false;
 let startX, startY, curX, curY;
+let drawPoints = [];
 let dragOff = null, dragSnap = null;
 let history = [];
 
-function initCanvas() {
+function initCanvas(syncActiveSize = false) {
   vpW = parseInt(document.getElementById('vpW').value) || 1997;
   vpH = parseInt(document.getElementById('vpH').value) || 3258;
   const cont = document.getElementById('canvas-container');
   scale = Math.min((cont.clientWidth - 4) / vpW, (cont.clientHeight - 4) / vpH);
   canvas.width  = Math.round(vpW * scale);
   canvas.height = Math.round(vpH * scale);
+  syncPresetSizesFromRatio();
+  updateRatioHint();
+  if (syncActiveSize && activePreset.tool === 'draw') {
+    setLineSizeValue(activePreset.width || suggestedWallWidth());
+  }
+  updateActiveInfo();
   render();
 }
 
-document.getElementById('vpW').addEventListener('change', initCanvas);
-document.getElementById('vpH').addEventListener('change', initCanvas);
-window.addEventListener('resize', initCanvas);
+document.getElementById('vpW').addEventListener('change', () => initCanvas(true));
+document.getElementById('vpH').addEventListener('change', () => initCanvas(true));
+document.getElementById('wallRatio').addEventListener('input', () => initCanvas(true));
+document.getElementById('dotRatio').addEventListener('input', () => initCanvas(true));
+document.getElementById('lineSize').addEventListener('input', updateActiveInfo);
+window.addEventListener('resize', () => initCanvas(false));
 
 document.getElementById('imgInput').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
@@ -361,19 +467,87 @@ function snapV(v) {
 function toVP(cx, cy)     { return { x: snapV(cx / scale), y: snapV(cy / scale) }; }
 function toCanvas(vx, vy) { return { x: vx * scale, y: vy * scale }; }
 
+function distancePointToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq < 0.0001) return Math.hypot(px - x1, py - y1);
+  const t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  const tc = Math.max(0, Math.min(1, t));
+  return Math.hypot(x1 + tc * dx - px, y1 + tc * dy - py);
+}
+
+function pointsClose(a, b, eps = 0.25) {
+  return Math.abs(a.x - b.x) <= eps && Math.abs(a.y - b.y) <= eps;
+}
+
+function polylineSegments(pts) {
+  const segments = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (Math.hypot(b.x - a.x, b.y - a.y) < 0.001) continue;
+    segments.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  }
+  return segments;
+}
+
+function segmentsToItems(segments, color, width) {
+  if (!segments.length) return [];
+  const out = [];
+  let currentPts = [{ x: segments[0].x1, y: segments[0].y1 }, { x: segments[0].x2, y: segments[0].y2 }];
+
+  function flushCurrent() {
+    if (currentPts.length < 2) return;
+    if (currentPts.length === 2) {
+      out.push({
+        type: 'line',
+        x1: currentPts[0].x,
+        y1: currentPts[0].y,
+        x2: currentPts[1].x,
+        y2: currentPts[1].y,
+        color,
+        width
+      });
+    } else {
+      out.push({ type: 'polyline', pts: currentPts.map(p => ({ ...p })), color, width });
+    }
+  }
+
+  for (let i = 1; i < segments.length; i++) {
+    const seg = segments[i];
+    const last = currentPts[currentPts.length - 1];
+    const segStart = { x: seg.x1, y: seg.y1 };
+    const segEnd = { x: seg.x2, y: seg.y2 };
+    if (pointsClose(last, segStart)) {
+      currentPts.push(segEnd);
+      continue;
+    }
+    flushCurrent();
+    currentPts = [segStart, segEnd];
+  }
+
+  flushCurrent();
+  return out;
+}
+
 // ─── Hit test ─────────────────────────────────────────────────────────────────
 function hitTest(vx, vy) {
   const thresh = 12 / scale;
   for (let i = items.length - 1; i >= 0; i--) {
     const it = items[i];
     if (it.type === 'dot') {
-      if (Math.hypot(vx - it.x, vy - it.y) < thresh * 2) return i;
+      const dotRadius = Math.max(thresh * 2, (it.size || suggestedDotSize()) / 2);
+      if (Math.hypot(vx - it.x, vy - it.y) < dotRadius) return i;
+    } else if (it.type === 'polyline') {
+      const halfStroke = Math.max(thresh, (it.width || suggestedWallWidth()) / 2);
+      const segments = polylineSegments(it.pts || []);
+      for (const seg of segments) {
+        if (distancePointToSegment(vx, vy, seg.x1, seg.y1, seg.x2, seg.y2) < halfStroke) {
+          return i;
+        }
+      }
     } else {
-      const dx = it.x2 - it.x1, dy = it.y2 - it.y1;
-      const len = Math.hypot(dx, dy); if (len < 1) continue;
-      const t = ((vx - it.x1)*dx + (vy - it.y1)*dy) / (len*len);
-      const tc = Math.max(0, Math.min(1, t));
-      if (Math.hypot(it.x1 + tc*dx - vx, it.y1 + tc*dy - vy) < thresh) return i;
+      const halfStroke = Math.max(thresh, (it.width || suggestedWallWidth()) / 2);
+      if (distancePointToSegment(vx, vy, it.x1, it.y1, it.x2, it.y2) < halfStroke) return i;
     }
   }
   return -1;
@@ -393,7 +567,9 @@ canvas.addEventListener('mousedown', e => {
     updateList(); render(); return;
   }
   if (tool === 'draw') {
-    drawing = true; startX = vp.x; startY = vp.y; curX = vp.x; curY = vp.y;
+    drawing = true;
+    startX = vp.x; startY = vp.y; curX = vp.x; curY = vp.y;
+    drawPoints = [{ x: vp.x, y: vp.y }];
   } else {
     const idx = hitTest(vp.x, vp.y);
     selectedIdx = idx;
@@ -420,11 +596,22 @@ canvas.addEventListener('mousemove', e => {
     return;
   }
   eraserPos = null;
-  if (tool === 'draw' && drawing) { curX = vp.x; curY = vp.y; render(); }
+  if (tool === 'draw' && drawing) {
+    curX = vp.x; curY = vp.y;
+    const last = drawPoints[drawPoints.length - 1];
+    const minStep = Math.max(3, (parseInt(document.getElementById('lineSize').value) || suggestedWallWidth()) * 0.25);
+    if (!last || Math.hypot(vp.x - last.x, vp.y - last.y) >= minStep) {
+      drawPoints.push({ x: vp.x, y: vp.y });
+    }
+    render();
+  }
   else if (tool === 'select' && dragOff && e.buttons === 1 && selectedIdx >= 0) {
     const dx = vp.x - dragOff.x, dy = vp.y - dragOff.y;
     const s = dragSnap, it = items[selectedIdx];
     if (s.type === 'dot') { it.x = s.x + dx; it.y = s.y + dy; }
+    else if (s.type === 'polyline') {
+      it.pts = s.pts.map(p => ({ x: p.x + dx, y: p.y + dy }));
+    }
     else { it.x1 = s.x1+dx; it.y1 = s.y1+dy; it.x2 = s.x2+dx; it.y2 = s.y2+dy; }
     render();
   }
@@ -437,13 +624,36 @@ canvas.addEventListener('mouseup', e => {
   const vp = toVP(e.clientX - r.left, e.clientY - r.top);
   if (tool === 'draw' && drawing) {
     drawing = false;
-    if (Math.abs(vp.x - startX) > 2 || Math.abs(vp.y - startY) > 2) {
+    const last = drawPoints[drawPoints.length - 1];
+    if (!last || !pointsClose(last, { x: vp.x, y: vp.y })) {
+      drawPoints.push({ x: vp.x, y: vp.y });
+    }
+    const filteredPoints = drawPoints.filter((pt, idx, arr) =>
+      idx === 0 || !pointsClose(pt, arr[idx - 1])
+    );
+    if (filteredPoints.length >= 2) {
       pushHistory();
-      items.push({ type:'line', x1:startX, y1:startY, x2:vp.x, y2:vp.y,
-        color: activePreset.color,
-        width: parseInt(document.getElementById('lineSize').value) || 20 });
+      if (filteredPoints.length === 2) {
+        items.push({
+          type:'line',
+          x1:filteredPoints[0].x,
+          y1:filteredPoints[0].y,
+          x2:filteredPoints[1].x,
+          y2:filteredPoints[1].y,
+          color: activePreset.color,
+          width: parseInt(document.getElementById('lineSize').value) || 20
+        });
+      } else {
+        items.push({
+          type:'polyline',
+          pts: filteredPoints,
+          color: activePreset.color,
+          width: parseInt(document.getElementById('lineSize').value) || 20
+        });
+      }
       updateList();
     }
+    drawPoints = [];
     render();
   } else if (tool === 'select') { dragOff = null; dragSnap = null; }
 });
@@ -481,7 +691,7 @@ function render() {
 
     if (it.type === 'dot') {
       const c = toCanvas(it.x, it.y);
-      const r = Math.max(6, (it.size || 60) * scale / 40);
+      const r = Math.max(4, ((it.size || suggestedDotSize()) * scale) / 2);
       ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI*2);
       ctx.fillStyle = col + (sel ? 'ff' : 'cc'); ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
@@ -493,12 +703,35 @@ function render() {
         ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
         ctx.fillText(preset.emoji, c.x, c.y + r * 0.38);
       }
+    } else if (it.type === 'polyline') {
+      const pts = it.pts || [];
+      if (pts.length < 2) return;
+      ctx.beginPath();
+      const first = toCanvas(pts[0].x, pts[0].y);
+      ctx.moveTo(first.x, first.y);
+      for (let j = 1; j < pts.length; j++) {
+        const p = toCanvas(pts[j].x, pts[j].y);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = col;
+      ctx.lineWidth = Math.max(1, (it.width || suggestedWallWidth()) * scale);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+      ctx.stroke();
+      if (sel) {
+        pts.forEach(pt => {
+          const c = toCanvas(pt.x, pt.y);
+          ctx.beginPath(); ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffff00'; ctx.fill();
+        });
+      }
     } else {
       const a = toCanvas(it.x1, it.y1), b = toCanvas(it.x2, it.y2);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
       ctx.strokeStyle = col;
-      ctx.lineWidth = Math.max(1.5, (it.width||20) * scale / 20);
-      ctx.lineCap = 'round'; ctx.setLineDash([]); ctx.stroke();
+      ctx.lineWidth = Math.max(1, (it.width || suggestedWallWidth()) * scale);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([]); ctx.stroke();
       if (sel) {
         [a,b].forEach(pt => {
           ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI*2);
@@ -522,12 +755,24 @@ function render() {
 
   // Preview while drawing
   if (drawing) {
-    const a = toCanvas(startX, startY), b = toCanvas(curX, curY);
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = activePreset.color; ctx.lineWidth = 2;
+    const previewPts = drawPoints.length ? drawPoints : [{ x: startX, y: startY }, { x: curX, y: curY }];
+    ctx.beginPath();
+    const first = toCanvas(previewPts[0].x, previewPts[0].y);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < previewPts.length; i++) {
+      const p = toCanvas(previewPts[i].x, previewPts[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = activePreset.color;
+    ctx.lineWidth = Math.max(1, (parseInt(document.getElementById('lineSize').value) || suggestedWallWidth()) * scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.beginPath(); ctx.arc(a.x, a.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
-    ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    previewPts.forEach((pt, idx) => {
+      if (idx !== 0 && idx !== previewPts.length - 1) return;
+      const c = toCanvas(pt.x, pt.y);
+      ctx.beginPath(); ctx.arc(c.x, c.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    });
   }
 }
 
@@ -628,12 +873,51 @@ function clipLineCircle(line, cx, cy, r) {
   return result; // empty = whole segment was inside circle (deleted)
 }
 
+function clipPolylineCircle(polyline, cx, cy, r) {
+  const rebuilt = [];
+  let currentSegments = [];
+
+  function flushSegments() {
+    if (!currentSegments.length) return;
+    rebuilt.push(...segmentsToItems(currentSegments, polyline.color, polyline.width));
+    currentSegments = [];
+  }
+
+  for (const seg of polylineSegments(polyline.pts || [])) {
+    const clipped = clipLineCircle(seg, cx, cy, r);
+    if (!clipped.length) {
+      flushSegments();
+      continue;
+    }
+    for (let i = 0; i < clipped.length; i++) {
+      const piece = clipped[i];
+      if (!currentSegments.length) {
+        currentSegments.push(piece);
+      } else {
+        const prev = currentSegments[currentSegments.length - 1];
+        if (pointsClose({ x: prev.x2, y: prev.y2 }, { x: piece.x1, y: piece.y1 })) {
+          currentSegments.push(piece);
+        } else {
+          flushSegments();
+          currentSegments.push(piece);
+        }
+      }
+      if (i < clipped.length - 1) flushSegments();
+    }
+  }
+
+  flushSegments();
+  return rebuilt;
+}
+
 function eraseAt(ex, ey) {
   const r = eraserRadius();
   const next = [];
   for (const it of items) {
     if (it.type === 'dot') {
       if (Math.hypot(it.x - ex, it.y - ey) > r) next.push(it);
+    } else if (it.type === 'polyline') {
+      next.push(...clipPolylineCircle(it, ex, ey, r));
     } else {
       next.push(...clipLineCircle(it, ex, ey, r));
     }
@@ -801,7 +1085,7 @@ function parseXMLInput() {
         items.push({ type:'line', x1, y1, x2, y2, color:col, width:sw });
       }
     });
-    initCanvas(); updateList();
+    initCanvas(true); updateList();
   } catch(e) { alert('XML parse error: ' + e); }
 }
 
@@ -904,7 +1188,7 @@ function applyImageViewport(img) {
   vpH = img.naturalHeight;
   document.getElementById('vpW').value = vpW;
   document.getElementById('vpH').value = vpH;
-  initCanvas();
+  initCanvas(true);
 }
 function updateImgDirUI() {
   if (!imgDirHandle) return;
@@ -1018,8 +1302,147 @@ document.addEventListener('keydown', e => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 buildPalette();
 updateActiveInfo();
+function updateList() {
+  const el = document.getElementById('itemList');
+  el.innerHTML = '';
+  document.getElementById('itemCount').textContent = items.length;
+  items.forEach((it, i) => {
+    const preset = PRESETS.find(p => p.color === it.color);
+    const label = preset ? preset.emoji + ' ' + preset.label : it.color;
+    let coords = '';
+    if (it.type === 'dot') {
+      coords = `(${Math.round(it.x)},${Math.round(it.y)})`;
+    } else if (it.type === 'polyline') {
+      coords = `${it.pts.length} pts`;
+    } else {
+      coords = `(${Math.round(it.x1)},${Math.round(it.y1)}) -> (${Math.round(it.x2)},${Math.round(it.y2)})`;
+    }
+    const d = document.createElement('div');
+    d.className = 'item-row' + (i === selectedIdx ? ' selected' : '');
+    d.innerHTML = `<span>${label}</span><span style="color:#888;font-size:9px">${coords}</span>`;
+    d.onclick = () => { selectedIdx = i; updateList(); render(); };
+    el.appendChild(d);
+  });
+}
+
+function parsePathPoints(pathData) {
+  const pts = [];
+  const regex = /[ML]\s*([\d.-]+)\s+([\d.-]+)/ig;
+  let match;
+  while ((match = regex.exec(pathData)) !== null) {
+    pts.push({ x: parseFloat(match[1]), y: parseFloat(match[2]) });
+  }
+  return pts;
+}
+
+function parseXMLInput() {
+  const xml = document.getElementById('xmlInput').value.trim();
+  if (!xml) return;
+  try {
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const vector = doc.querySelector('vector');
+    if (vector) {
+      for (const attr of vector.attributes) {
+        if (attr.name.endsWith('viewportWidth')) vpW = parseFloat(attr.value) || vpW;
+        if (attr.name.endsWith('viewportHeight')) vpH = parseFloat(attr.value) || vpH;
+      }
+      document.getElementById('vpW').value = vpW;
+      document.getElementById('vpH').value = vpH;
+    }
+
+    pushHistory();
+    items = [];
+    doc.querySelectorAll('path').forEach(p => {
+      let d = '', col = '#FF000000', sw = 20, isRound = false;
+      for (const attr of p.attributes) {
+        const n = attr.name;
+        if (n.endsWith('pathData')) d = attr.value;
+        if (n.endsWith('strokeColor')) col = attr.value;
+        if (n.endsWith('strokeWidth')) sw = parseFloat(attr.value) || 20;
+        if (n.endsWith('strokeLineCap')) isRound = (attr.value === 'round');
+      }
+
+      const pts = parsePathPoints(d);
+      if (!pts.length) return;
+
+      col = androidColorToHex(col);
+      const first = pts[0];
+      const last = pts[pts.length - 1];
+      const isDot = isRound || (
+        pts.length <= 2 &&
+        Math.abs(first.x - last.x) < 1 &&
+        Math.abs(first.y - last.y) < 1
+      );
+
+      if (isDot) {
+        items.push({ type: 'dot', x: first.x, y: first.y, color: col, size: sw });
+      } else if (pts.length > 2) {
+        items.push({ type: 'polyline', pts, color: col, width: sw });
+      } else {
+        items.push({ type: 'line', x1: first.x, y1: first.y, x2: last.x, y2: last.y, color: col, width: sw });
+      }
+    });
+
+    initCanvas(true);
+    updateList();
+  } catch (e) {
+    alert('XML parse error: ' + e);
+  }
+}
+
+function generateXML() {
+  let xml = `<vector xmlns:android="http://schemas.android.com/apk/res/android"\n`;
+  xml += `    android:width="${vpW}dp"\n    android:height="${vpH}dp"\n`;
+  xml += `    android:viewportWidth="${vpW}"\n    android:viewportHeight="${vpH}">\n`;
+
+  items.forEach(it => {
+    const col = hexToAndroid(it.color);
+    if (it.type === 'dot') {
+      const x = +it.x.toFixed(2), y = +it.y.toFixed(2);
+      xml += `    <path\n        android:strokeColor="${col}"\n`;
+      xml += `        android:strokeWidth="${it.size || 60}"\n`;
+      xml += `        android:strokeLineCap="round"\n`;
+      xml += `        android:pathData="M${x} ${y}L${x} ${y}"/>\n`;
+      return;
+    }
+
+    if (it.type === 'polyline') {
+      const pts = (it.pts || []).map(p => ({ x: +p.x.toFixed(2), y: +p.y.toFixed(2) }));
+      if (pts.length < 2) return;
+
+      if (it.color === '#FF0000') {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i], b = pts[i + 1];
+          xml += `    <path\n        android:strokeColor="${col}"\n`;
+          xml += `        android:strokeWidth="${it.width || 20}"\n`;
+          xml += `        android:pathData="M${a.x} ${a.y}L${b.x} ${b.y}"/>\n`;
+        }
+        return;
+      }
+
+      const pathData = pts.map((p, idx) =>
+        idx === 0 ? `M${p.x} ${p.y}` : `L${p.x} ${p.y}`
+      ).join('');
+      xml += `    <path\n        android:strokeColor="${col}"\n`;
+      xml += `        android:strokeWidth="${it.width || 20}"\n`;
+      xml += `        android:strokeLineCap="round"\n`;
+      xml += `        android:strokeLineJoin="round"\n`;
+      xml += `        android:pathData="${pathData}"/>\n`;
+      return;
+    }
+
+    const x1 = +it.x1.toFixed(2), y1 = +it.y1.toFixed(2), x2 = +it.x2.toFixed(2), y2 = +it.y2.toFixed(2);
+    xml += `    <path\n        android:strokeColor="${col}"\n`;
+    xml += `        android:strokeWidth="${it.width || 20}"\n`;
+    xml += `        android:pathData="M${x1} ${y1}L${x2} ${y2}"/>\n`;
+  });
+
+  xml += `</vector>`;
+  return xml;
+}
+
 updateMapLabel();
-initCanvas();
+initCanvas(true);
 restoreHandleUI();
 </script>
 </body>

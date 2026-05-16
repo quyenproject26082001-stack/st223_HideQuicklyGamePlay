@@ -3,14 +3,11 @@ package com.wanted.poster.hihi.activity_app.game
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.PointF
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import com.wanted.poster.hihi.activity_app.main.MainActivity
 import androidx.lifecycle.lifecycleScope
@@ -20,11 +17,12 @@ import com.wanted.poster.hihi.databinding.ActivityPlayingBinding
 import com.wanted.poster.hihi.databinding.DialogEndGameLostSingleBinding
 import com.wanted.poster.hihi.databinding.DialogEndGameWinSingleBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.resume
 
 class PlayingActivity : AppCompatActivity() {
 
@@ -33,9 +31,6 @@ class PlayingActivity : AppCompatActivity() {
 
     private var shownIndices: List<Int> = emptyList()
     private var idxToDisplayNum: Map<Int, Int> = emptyMap()
-
-    private val rng = java.util.Random()
-    private val soundChance = 0.35f
 
     private var isPaused = false
     private var isCountdownRunning = false
@@ -56,9 +51,7 @@ class PlayingActivity : AppCompatActivity() {
 
         mapData = MapLoader.load(this, mapIndex)
         android.util.Log.d("PlayingActivity", "doors: ${mapData.doorLines.size} -> ${mapData.doorLines}")
-        DoorSoundPlayer.preload(this)
-        HighQuickGamePlayer.start(this)
-        BgMusicPlayer.start(this)
+        GameAudio.startGame(this)
         val allSpawns = mapData.hiderSpawns
         val passedIndices = intent.getIntArrayExtra(ChooseNumberActivity.EXTRA_SHOWN_SPAWN_INDICES)
             ?.map { it.toInt() }
@@ -82,13 +75,39 @@ class PlayingActivity : AppCompatActivity() {
         setupPauseUi()
 
         binding.btnBack.setOnClickListener { finish() }
-        binding.mapNumberView.setOnLongClickListener {
-            binding.mapNumberView.showDebugCollision = !binding.mapNumberView.showDebugCollision
-            binding.mapNumberView.invalidate()
-            true
+        if (GameConfig.DEBUG_KILLER_COLLISION) {
+            binding.mapNumberView.setOnLongClickListener {
+                binding.mapNumberView.showDebugCollision = !binding.mapNumberView.showDebugCollision
+                binding.mapNumberView.invalidate()
+                true
+            }
         }
 
-        binding.root.post { startCountdownAndReveal(playerNumber) }
+        lifecycleScope.launch {
+            val killerSpawn = mapData.killerSpawn
+            val paths = withContext(Dispatchers.IO) {
+                // Tạo 1 instance duy nhất (IntArray đã trích xuất sẵn), rồi tính song song.
+                val finder = KillerPathfinder(mapData.collisionBitmap)
+                coroutineScope {
+                    idxToDisplayNum.entries.map { (spawnIdx, displayNum) ->
+                        async {
+                            val target = allSpawns.getOrNull(spawnIdx) ?: killerSpawn
+                            val path = try {
+                                finder.findPath(killerSpawn.x, killerSpawn.y, target.x, target.y)
+                                    .ifEmpty { listOf(killerSpawn, target) }
+                            } catch (_: Exception) { listOf(killerSpawn, target) }
+                            displayNum to path
+                        }
+                    }.awaitAll().toMap()
+                }
+            }
+            binding.mapNumberView.setIntroEntrancePaths(paths)
+            binding.root.post {
+                binding.mapNumberView.animatePlayingSpawnsIntro {
+                    startCountdownAndReveal(playerNumber)
+                }
+            }
+        }
     }
 
     private fun startReveal(playerNumber: Int) {
@@ -105,162 +124,36 @@ class PlayingActivity : AppCompatActivity() {
         }
 
         val playerSpawnIdx = shownIndices.getOrNull(playerNumber - 1)
-        val killerOrder = (0 until allSpawns.size).shuffled()
-        val visitLimit = minOf(11, allSpawns.size)
-        val toVisit = killerOrder.take(visitLimit)
+        var playerCaught = false
+        val aliveDisplayNums = idxToDisplayNum.values.toSet()
+
+        val runner = KillerRunner(
+            mapData = mapData,
+            shownIndices = shownIndices,
+            idxToDisplayNum = idxToDisplayNum,
+            // O single, mọi số đang hiện trên map đều là player thật.
+            // Người chơi chỉ "đóng vai" một số đã chọn, nên chỉ thua khi số đó bị bắt.
+            playerDisplayNums = aliveDisplayNums,
+            mapView = binding.mapNumberView,
+            context = this,
+            isPaused = { isPaused }
+        )
 
         lifecycleScope.launch {
-            var currentPos = mapData.killerSpawn
-            val trail = mutableListOf<PointF>()
-            val killedSpawnIndices = mutableSetOf<Int>()
-            var playerCaught = false
-
-            fun markKilled(spawnIdx: Int, displayNum: Int?) {
-                if (displayNum != null) {
-                    binding.mapNumberView.killNumber(displayNum)
-                }
-                SfxPlayer.playKill(this@PlayingActivity)
-                killedSpawnIndices.add(spawnIdx)
-                if (spawnIdx == playerSpawnIdx || displayNum == playerNumber) {
-                    playerCaught = true
-                }
-            }
-
-            for (spawnIdx in toVisit) {
-                waitIfPaused()
-
-                val spawnPos = allSpawns[spawnIdx]
-                val displayNum = idxToDisplayNum[spawnIdx]
-                val soundInfo = if (mapData.rooms.isNotEmpty() && rng.nextFloat() < soundChance) {
-                    mapData.rooms.random(rng.asKotlinRandom())
-                } else {
-                    null
-                }
-
-                if (soundInfo != null) {
-                    waitIfPaused()
-                    RoomSoundPlayer.play(this@PlayingActivity, soundInfo.type)
-                    binding.mapNumberView.showSoundIndicator(soundInfo.position)
-
-                    val pathToSound = withContext(Dispatchers.IO) {
-                        computePathToPoint(currentPos, soundInfo.position)
+            runner.run(
+                onKill = { spawnIdx, displayNum ->
+                    if (spawnIdx == playerSpawnIdx || displayNum == playerNumber) {
+                        playerCaught = true
                     }
-                    appendTrail(trail, pathToSound)
-                    binding.mapNumberView.setKillerTrail(trail.toList())
-                    awaitAnimation(pathToSound)
-                    currentPos = soundInfo.position
-                    binding.mapNumberView.clearSoundIndicator()
-                    RoomSoundPlayer.release()
-                    pausedDelay(400L)
-
-                    // 100%: killer kills the nearest hider after hearing sound
-                    waitIfPaused()
-                    val nearestIdx = shownIndices
-                        .filter { it !in killedSpawnIndices && it in allSpawns.indices }
-                        .minByOrNull { idx ->
-                            val p = allSpawns[idx]
-                            val dx = p.x - currentPos.x; val dy = p.y - currentPos.y
-                            dx * dx + dy * dy
-                        }
-                    if (nearestIdx != null) {
-                        val nearestPos = allSpawns[nearestIdx]
-                        val nearestNum = idxToDisplayNum[nearestIdx]
-                        val pathToHider = withContext(Dispatchers.IO) {
-                            computePathToPoint(currentPos, nearestPos)
-                        }
-                        appendTrail(trail, pathToHider)
-                        binding.mapNumberView.setKillerTrail(trail.toList())
-                        awaitAnimation(pathToHider)
-                        awaitKillShake()
-                        markKilled(nearestIdx, nearestNum)
-                        currentPos = nearestPos
-                        if (playerCaught) break
-                    }
-
-                    pausedDelay(500L)
-                    continue
-                }
-
-                setStatusText(
-                    if (displayNum != null) "Killer vao phong $displayNum..."
-                    else "Killer kiem tra..."
-                )
-                val path = withContext(Dispatchers.IO) {
-                    computePathToPoint(currentPos, spawnPos)
-                }
-                appendTrail(trail, path)
-                binding.mapNumberView.setKillerTrail(trail.toList())
-                awaitAnimation(path, onCrossDoor = { DoorSoundPlayer.playRandom(this@PlayingActivity) })
-                currentPos = spawnPos
-
-                if (displayNum != null) {
-                    awaitKillShake()
-                    markKilled(spawnIdx, displayNum)
-                    if (playerCaught) break
-                } else if (rng.nextFloat() < GameConfig.SWEEP_KILL_CHANCE) {
-                    val nearestIdx = shownIndices
-                        .filter { it !in killedSpawnIndices && it in allSpawns.indices }
-                        .minByOrNull { idx ->
-                            val p = allSpawns[idx]
-                            val dx = p.x - currentPos.x; val dy = p.y - currentPos.y
-                            dx * dx + dy * dy
-                        }
-                    if (nearestIdx != null) {
-                        val nearestPos = allSpawns[nearestIdx]
-                        val nearestNum = idxToDisplayNum[nearestIdx]
-                        val sweepPath = withContext(Dispatchers.IO) {
-                            computePathToPoint(currentPos, nearestPos)
-                        }
-                        appendTrail(trail, sweepPath)
-                        binding.mapNumberView.setKillerTrail(trail.toList())
-                        awaitAnimation(sweepPath)
-                        if (nearestNum != null) {
-                            awaitKillShake()
-                            markKilled(nearestIdx, nearestNum)
-                            if (playerCaught) break
-                        }
-                        currentPos = nearestPos
-                    }
-                }
-                pausedDelay(500L)
-            }
-
-            RoomSoundPlayer.release()
-            DoorSoundPlayer.release()
-            HighQuickGamePlayer.release()
-            BgMusicPlayer.release()
-            SfxPlayer.release()
+                },
+                shouldStop = { playerCaught },
+                onStatusChange = { setStatusText(it) }
+            )
+            // Chờ scream kịp phát trước khi release() huỷ handler.
+            delay(450L)
+            GameAudio.release()
             setStatusText(null)
             showResultDialog(playerCaught, playerNumber)
-        }
-    }
-
-    private fun appendTrail(trail: MutableList<PointF>, path: List<PointF>) {
-        if (trail.isEmpty()) {
-            trail.addAll(path)
-        } else {
-            trail.addAll(path.drop(1))
-        }
-    }
-
-    private suspend fun awaitKillShake() = suspendCancellableCoroutine<Unit> { cont ->
-        binding.mapNumberView.animateKillShake {
-            if (cont.isActive) cont.resume(Unit)
-        }
-    }
-
-    private suspend fun awaitAnimation(path: List<PointF>, onCrossDoor: (() -> Unit)? = null) {
-        waitIfPaused()
-        suspendCancellableCoroutine<Unit> { cont ->
-            binding.mapNumberView.animateKillerAlongPath(
-                path,
-                durationMs = GameConfig.killerAnimationDurationMs(path),
-                doorLines = mapData.doorLines,
-                onCrossDoor = onCrossDoor
-            ) {
-                if (cont.isActive) cont.resume(Unit)
-            }
-            cont.invokeOnCancellation { binding.mapNumberView.cancelAnimation() }
         }
     }
 
@@ -271,16 +164,10 @@ class PlayingActivity : AppCompatActivity() {
             isPaused = !isPaused
             if (isPaused) {
                 binding.mapNumberView.pauseAnimation()
-                RoomSoundPlayer.pause()
-                DoorSoundPlayer.pause()
-                HighQuickGamePlayer.pause()
-                BgMusicPlayer.pause()
+                GameAudio.pause()
             } else {
                 binding.mapNumberView.resumeAnimation()
-                RoomSoundPlayer.resume()
-                DoorSoundPlayer.resume()
-                HighQuickGamePlayer.resume()
-                BgMusicPlayer.resume()
+                GameAudio.resume()
                 statusText = null
             }
             updatePauseUi()
@@ -305,107 +192,16 @@ class PlayingActivity : AppCompatActivity() {
         updatePauseUi()
     }
 
-    private suspend fun waitIfPaused() {
-        while (isPaused) delay(100L)
-    }
-
-    private suspend fun pausedDelay(durationMs: Long) {
-        var remaining = durationMs
-        while (remaining > 0L) {
-            waitIfPaused()
-            val step = minOf(100L, remaining)
-            delay(step)
-            remaining -= step
-        }
-    }
-
-    private fun computePathToPoint(from: PointF, to: PointF): List<PointF> =
-        try {
-            KillerPathfinder(mapData.collisionBitmap)
-                .findPath(from.x, from.y, to.x, to.y)
-                .ifEmpty { listOf(from, to) }
-        } catch (_: Exception) {
-            listOf(from, to)
-        }
-
-    private fun findNearestHider(from: PointF): PointF? =
-        mapData.hiderSpawns.minByOrNull { p ->
-            val dx = p.x - from.x
-            val dy = p.y - from.y
-            dx * dx + dy * dy
-        }
-
-    private fun java.util.Random.asKotlinRandom() = object : kotlin.random.Random() {
-        override fun nextBits(bitCount: Int) = this@asKotlinRandom.nextInt().ushr(32 - bitCount)
-    }
-
     private fun startCountdownAndReveal(playerNumber: Int) {
         if (isCountdownRunning || hasStartedReveal) return
-        lifecycleScope.launch {
-            isCountdownRunning = true
-            updatePauseUi()
-            binding.viewOverlayDim.apply {
-                alpha = 0f
-                visibility = View.VISIBLE
-                animate().alpha(0.72f).setDuration(220L).start()
-            }
-            for (value in 3 downTo 1) {
-                animateCountdownValue(value)
-            }
-            binding.tvOverLay.animate().cancel()
-            binding.tvOverLay.animate()
-                .alpha(0f)
-                .setDuration(160L)
-                .withEndAction {
-                    binding.tvOverLay.visibility = View.GONE
-                }
-                .start()
-            binding.viewOverlayDim.animate()
-                .alpha(0f)
-                .setDuration(220L)
-                .withEndAction {
-                    binding.viewOverlayDim.visibility = View.GONE
-                }
-                .start()
+        isCountdownRunning = true
+        updatePauseUi()
+        binding.countdownRadarView.startCountdown(3) {
             isCountdownRunning = false
             updatePauseUi()
             startReveal(playerNumber)
         }
     }
-
-    private suspend fun animateCountdownValue(value: Int) =
-        suspendCancellableCoroutine<Unit> { cont ->
-            binding.tvOverLay.animate().cancel()
-            binding.tvOverLay.apply {
-                text = value.toString()
-                visibility = View.VISIBLE
-                alpha = 0f
-                scaleX = 1.45f
-                scaleY = 1.45f
-                translationY = height * 0.04f
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 92f)
-            }
-            binding.tvOverLay.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .translationY(0f)
-                .setDuration(360L)
-                .setInterpolator(DecelerateInterpolator())
-                .withEndAction {
-                    binding.tvOverLay.animate()
-                        .alpha(0f)
-                        .scaleX(0.82f)
-                        .scaleY(0.82f)
-                        .setDuration(240L)
-                        .setInterpolator(AccelerateInterpolator())
-                        .withEndAction {
-                            if (cont.isActive) cont.resume(Unit)
-                        }
-                        .start()
-                }
-                .start()
-        }
 
     private fun showOverlayText(message: String, sizeSp: Float) {
         binding.viewOverlayDim.apply {
@@ -429,7 +225,7 @@ class PlayingActivity : AppCompatActivity() {
     }
 
     private fun showResultDialog(caught: Boolean, playerRoom: Int) {
-        if (caught) SfxPlayer.playScream(this)
+        if (caught) GameAudio.playScream(this)
         if (caught) {
             showLostDialog(playerRoom)
         } else {
@@ -487,13 +283,15 @@ class PlayingActivity : AppCompatActivity() {
             dialog.dismiss()
             startActivity(
                 Intent(this, ChooseKillerActivity::class.java).apply {
+                    // Quay lại flow chọn killer hiện có trong back stack,
+                    // đồng thời dọn các màn chọn map / chọn số / playing ở phía trên.
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     putExtra(
                         ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH,
                         intent.getStringExtra(ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH)
                     )
                 }
             )
-            finish()
         }
 
         dialog.show()
@@ -513,11 +311,7 @@ class PlayingActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        HighQuickGamePlayer.release()
-        RoomSoundPlayer.release()
-        DoorSoundPlayer.release()
-        BgMusicPlayer.release()
-        SfxPlayer.release()
+        GameAudio.release()
         super.onDestroy()
     }
 }

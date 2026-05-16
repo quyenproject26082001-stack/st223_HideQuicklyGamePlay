@@ -54,6 +54,12 @@
         android:background="#CC000000"
         android:visibility="gone" />
 
+    <com.wanted.poster.hihi.activity_app.game.CountdownRadarView
+        android:id="@+id/countdownRadarView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <!-- Overlay text for pause/countdown -->
     <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
         android:id="@+id/tvOverLay"

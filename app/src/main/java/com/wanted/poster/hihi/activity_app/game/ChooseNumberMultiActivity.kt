@@ -1,10 +1,7 @@
 package com.wanted.poster.hihi.activity_app.game
 
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.wanted.poster.hihi.R
 import com.wanted.poster.hihi.core.extensions.handleBackLeftToRight
@@ -41,10 +38,8 @@ class ChooseNumberMultiActivity : AppCompatActivity() {
             }
 
             val allSpawns = mapData.hiderSpawns
-            val maxSpots = minOf(10, allSpawns.size)
-            shownSpawnIndices = (0 until allSpawns.size).shuffled()
-                .take(maxSpots)
-                .toIntArray()
+            val maxSpots = minOf(GameSession.players.size, allSpawns.size)
+            shownSpawnIndices = GameConfig.selectSpawnIndices(allSpawns, maxSpots).toIntArray()
             GameSession.shownSpawnIndices = shownSpawnIndices
 
             val shownSpawns = shownSpawnIndices.map { allSpawns[it] }
@@ -59,30 +54,29 @@ class ChooseNumberMultiActivity : AppCompatActivity() {
             binding.mapNumberView.onNumberSelected = { displayNum ->
                 if (!GameSession.assignedDisplayNums().contains(displayNum)) {
                     pendingDisplayNum = displayNum
-                    binding.btnConfirm.alpha = 1f
-                    binding.btnConfirm.isEnabled = true
+                    binding.btnConfirm.visibility = android.view.View.VISIBLE
+                }
+            }
+
+            binding.btnConfirm.setOnSingleClick {
+                val num = pendingDisplayNum
+                if (num != -1 && !GameSession.assignedDisplayNums().contains(num)) {
+                    binding.btnConfirm.visibility = android.view.View.GONE
+                    confirmSelection(num)
                 }
             }
 
             showCurrentPlayer()
         }
-
-        binding.btnConfirm.setOnSingleClick {
-            if (pendingDisplayNum == -1) return@setOnSingleClick
-            confirmSelection()
-        }
     }
 
     private fun showCurrentPlayer() {
         val player = GameSession.players.getOrNull(currentPlayerIndex) ?: return
-        binding.tvCurrentPlayerName.text = player.name
+        binding.tvCurrentPlayerName.text = "Player ${currentPlayerIndex + 1}'s turn"
         binding.tvTurnInstruction.text = strings(R.string.choose_your_spot)
 
         pendingDisplayNum = -1
-        binding.btnConfirm.alpha = 0.5f
-        binding.btnConfirm.isEnabled = false
-
-        // Reset selection on map view
+        binding.btnConfirm.visibility = android.view.View.GONE
         binding.mapNumberView.takenNumbers = GameSession.assignedDisplayNums()
         binding.mapNumberView.highlightNumber(-1)
         binding.mapNumberView.invalidate()
@@ -92,38 +86,31 @@ class ChooseNumberMultiActivity : AppCompatActivity() {
 
     private fun loadCurrentPlayerAvatar(player: PlayerSetupModel) {
         CoroutineScope(Dispatchers.Main).launch {
-            val bmp = withContext(Dispatchers.IO) { loadAvatarBitmap(player) }
+            val bmp = withContext(Dispatchers.IO) { AvatarLoader.load(this@ChooseNumberMultiActivity, player) }
             binding.ivCurrentPlayerAvatar.setImageBitmap(bmp)
         }
     }
 
-    private fun confirmSelection() {
+    private fun confirmSelection(displayNum: Int) {
         val player = GameSession.players.getOrNull(currentPlayerIndex) ?: return
-        GameSession.playerAssignments[currentPlayerIndex] = pendingDisplayNum
+        GameSession.playerAssignments[currentPlayerIndex] = displayNum
 
-        // Load avatar and set on map view
-        CoroutineScope(Dispatchers.Main).launch {
-            val bmp = withContext(Dispatchers.IO) { loadAvatarBitmap(player) }
-            binding.mapNumberView.setSpawnAvatarBitmap(pendingDisplayNum, bmp)
-        }
-
+        val isLast = (currentPlayerIndex + 1) >= GameSession.players.size
         currentPlayerIndex++
-        if (currentPlayerIndex >= GameSession.players.size) {
-            startActivity(Intent(this, PlayingMultiActivity::class.java))
-            finish()
-        } else {
-            showCurrentPlayer()
-        }
-    }
 
-    private fun loadAvatarBitmap(player: PlayerSetupModel): Bitmap? {
-        val path = player.avatarPath ?: return null
-        return when {
-            path.startsWith("flag:") -> null
-            else -> try {
-                assets.open(path).use { BitmapFactory.decodeStream(it) }
-            } catch (_: Exception) { null }
+        CoroutineScope(Dispatchers.Main).launch {
+            val bmp = withContext(Dispatchers.IO) { AvatarLoader.load(this@ChooseNumberMultiActivity, player) }
+            binding.mapNumberView.setSpawnAvatarBitmap(displayNum, bmp)
+
+            if (isLast) {
+                binding.tvAllReady.visibility = android.view.View.VISIBLE
+                kotlinx.coroutines.delay(2000)
+                startActivity(Intent(this@ChooseNumberMultiActivity, PlayingMultiActivity::class.java))
+                finish()
+            }
         }
+
+        if (!isLast) showCurrentPlayer()
     }
 
     private fun setupActionBar() {

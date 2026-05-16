@@ -142,11 +142,21 @@ object MapLoader {
                     when (colorInt) {
                         COLOR_KILLER  -> killerSpawns.add(pos)
                         COLOR_HIDER   -> hiderSpawns.add(pos)
-                        COLOR_BEDROOM -> rooms.add(RoomInfo(pos, RoomType.BEDROOM))
-                        COLOR_BATH    -> rooms.add(RoomInfo(pos, RoomType.BATHROOM))
-                        COLOR_TOILET  -> rooms.add(RoomInfo(pos, RoomType.TOILET))
-                        COLOR_KITCHEN -> rooms.add(RoomInfo(pos, RoomType.KITCHEN))
-                        COLOR_LIVING  -> rooms.add(RoomInfo(pos, RoomType.LIVING))
+                        COLOR_BEDROOM -> rooms.add(
+                            RoomInfo(pos, RoomType.BEDROOM, GameConfig.roomSoundRadius(RoomType.BEDROOM))
+                        )
+                        COLOR_BATH    -> rooms.add(
+                            RoomInfo(pos, RoomType.BATHROOM, GameConfig.roomSoundRadius(RoomType.BATHROOM))
+                        )
+                        COLOR_TOILET  -> rooms.add(
+                            RoomInfo(pos, RoomType.TOILET, GameConfig.roomSoundRadius(RoomType.TOILET))
+                        )
+                        COLOR_KITCHEN -> rooms.add(
+                            RoomInfo(pos, RoomType.KITCHEN, GameConfig.roomSoundRadius(RoomType.KITCHEN))
+                        )
+                        COLOR_LIVING  -> rooms.add(
+                            RoomInfo(pos, RoomType.LIVING, GameConfig.roomSoundRadius(RoomType.LIVING))
+                        )
                     }
                 }
                 event = parser.next()

@@ -10,7 +10,14 @@
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug --quiet 2>&1 | Select-Object -Last 20)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug 2>&1 | Select-String -Pattern \"error:|BUILD\" | Select-Object -Last 30)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; cd \"C:\\\\APPS\\\\st223\\\\ST222_Poster-Maker-2\"; .\\\\gradlew assembleDebug 2>&1 | Select-String -Pattern \"error:|BUILD\" | Select-Object -Last 10)",
-      "PowerShell(Get-ChildItem -Path \"D:\\\\223\\\\st223_HideQuicklyGamePlay\" -Recurse | Where-Object {$_.PSIsContainer} | Select-Object -First 30 FullName)"
+      "PowerShell(Get-ChildItem -Path \"D:\\\\223\\\\st223_HideQuicklyGamePlay\" -Recurse | Where-Object {$_.PSIsContainer} | Select-Object -First 30 FullName)",
+      "WebFetch(domain:opengameart.org)",
+      "WebSearch",
+      "WebFetch(domain:freesound.org)",
+      "WebFetch(domain:kenney.nl)",
+      "WebFetch(domain:kenney.itch.io)",
+      "WebFetch(domain:pixabay.com)",
+      "WebFetch(domain:mixkit.co)"
     ]
   }
 }

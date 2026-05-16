@@ -1,0 +1,204 @@
+================================================================
+       HƯỚNG DẪN ĐỌC CODE — HIDE QUICKLY (ST222)
+================================================================
+
+----------------------------------------------------------------
+1. TỔNG QUAN GAME
+----------------------------------------------------------------
+
+Game trốn tìm trên điện thoại Android.
+- Killer (kẻ săn) di chuyển tự động trên bản đồ.
+- Người chơi chọn số phòng để trốn.
+- Kết thúc: xem ai bị Killer tìm thấy.
+
+Có 2 chế độ:
+  - Solo   : 1 người chơi, chọn 1 số, xem mình có thoát không.
+  - Multi  : nhiều người chơi (2-10), mỗi người chọn 1 số khác nhau.
+
+
+----------------------------------------------------------------
+2. LUỒNG CHƠI — SOLO MODE
+----------------------------------------------------------------
+
+ChooseKillerActivity
+  → chọn hình Killer
+ChooseNumberActivity  (activity_choose_number.xml)
+  → chọn số phòng trên map
+  → truyền sang PlayingActivity qua Intent extras:
+       EXTRA_MAP, EXTRA_KILLER_ASSET_PATH,
+       EXTRA_SELECTED_NUMBER, EXTRA_SHOWN_SPAWN_INDICES
+PlayingActivity  (activity_playing.xml)
+  → đếm ngược 3-2-1
+  → KillerRunner.run() chạy vòng lặp Killer
+  → showResultDialog() → thắng hoặc thua
+
+
+----------------------------------------------------------------
+3. LUỒNG CHƠI — MULTI MODE
+----------------------------------------------------------------
+
+SetupGameActivity  (activity_setup_game.xml)
+  → thêm/xoá player, chọn map, chọn Killer
+  → chọn chế độ: Manual (tự chọn số) hoặc Random (tự động)
+  → lưu vào GameSession.setup(...)
+
+  [Manual]                          [Random]
+      ↓                                 ↓
+ChooseNumberMultiActivity         PlayingMultiActivity
+  → từng player chọn số              (bỏ qua bước chọn số)
+  → lưu vào GameSession
+      ↓
+PlayingMultiActivity  (activity_playing_multi.xml)
+  → KillerRunner.run() chạy
+  → showResultDialog() → danh sách người sống sót
+
+
+----------------------------------------------------------------
+4. CẤU TRÚC FILE — PHÂN NHÓM
+----------------------------------------------------------------
+
+▸ STATE TOÀN CỤC
+  GameSession.kt          — singleton lưu danh sách player, map,
+                            killer path, spawn assignments.
+                            Tồn tại xuyên suốt các Activity.
+
+▸ CẤU HÌNH
+  GameConfig.kt           — hằng số điều chỉnh gameplay:
+                            tốc độ killer, kích thước, tỷ lệ kill,
+                            bật/tắt debug, bật/tắt đường đi killer.
+
+▸ DỮ LIỆU MAP
+  MapData.kt              — data class chứa: collisionBitmap,
+                            killerSpawn, hiderSpawns, rooms, doorLines.
+  MapLoader.kt            — load MapData từ assets theo mapIndex.
+
+▸ GAME LOOP
+  KillerRunner.kt         — toàn bộ logic di chuyển của Killer:
+                            chọn phòng thăm, nghe tiếng động,
+                            tìm và giết hider gần nhất.
+                            Dùng callback onKill / shouldStop / onStatusChange
+                            để 2 activity dùng chung mà không bị coupling.
+  KillerPathfinder.kt     — tìm đường (pathfinding) cho Killer
+                            dựa trên collisionBitmap của map.
+
+▸ ACTIVITY MÀN CHƠI
+  PlayingActivity.kt      — solo mode, dùng KillerRunner.
+  PlayingMultiActivity.kt — multi mode, dùng KillerRunner.
+
+▸ ACTIVITY SETUP
+  SetupGameActivity.kt        — cấu hình game multi trước khi chơi.
+  ChooseNumberActivity.kt     — chọn số phòng (solo).
+  ChooseNumberMultiActivity.kt— từng player chọn số (multi, manual).
+  ChooseMapActivity.kt        — chọn bản đồ (solo flow).
+  ChooseKillerActivity.kt     — chọn hình Killer (solo flow).
+
+▸ UI VIEW
+  MapNumberView.kt        — custom View vẽ toàn bộ game:
+                            - map nền
+                            - số phòng / avatar player
+                            - hình Killer di chuyển
+                            - đường đi Killer (trail)
+                            - hiệu ứng kill (shake + flash đỏ)
+                            - vòng sóng âm thanh
+                            Cấu hình UI nằm trong nested object
+                            NumberUiConfig (Badge, Text, Marker,
+                            Avatar, Sound, KillAnim, Colors).
+
+▸ AUDIO
+  GameAudio.kt            — facade gộp 5 player lại:
+                              BgMusicPlayer   — nhạc nền
+                              HighQuickGamePlayer — nhạc căng thẳng
+                              DoorSoundPlayer — tiếng cửa
+                              RoomSoundPlayer — tiếng phòng
+                              SfxPlayer       — kill / scream
+  SoundConfig.kt          — hằng số âm thanh (volume, fade...).
+
+▸ HELPER / UTIL
+  AvatarLoader.kt         — load bitmap avatar từ assets.
+  GameAudio.kt            — (xem Audio ở trên).
+
+▸ MODEL
+  PlayerSetupModel.kt     — thông tin 1 player: id, name, avatarPath.
+  MapData / RoomInfo / RoomType — (xem Dữ liệu Map ở trên).
+
+
+----------------------------------------------------------------
+5. CÁCH ĐỌC THEO TÍNH NĂNG
+----------------------------------------------------------------
+
+▸ Muốn hiểu Killer di chuyển thế nào?
+    → KillerRunner.kt → fun run(...)
+    → KillerPathfinder.kt → fun findPath(...)
+
+▸ Muốn thay đổi tốc độ / hành vi Killer?
+    → GameConfig.kt
+       KILLER_SPEED_MULTIPLIER   — tốc độ
+       SWEEP_KILL_CHANCE         — xác suất kill thêm khi quét phòng
+       SHOW_KILLER_TRAIL         — bật/tắt đường đi
+
+▸ Muốn hiểu map được load như thế nào?
+    → MapLoader.kt
+    → assets/Map/<mapIndex>.jpg        — ảnh map
+    → assets/Map/<mapIndex>_data.json  — spawn, room, door (nếu có)
+
+▸ Muốn thay đổi giao diện số phòng / màu sắc?
+    → MapNumberView.kt → private object NumberUiConfig
+       Badge   — kích thước ô số
+       Text    — font size, stroke
+       Marker  — icon chọn số, icon chết
+       Avatar  — tỷ lệ clip avatar
+       Sound   — hiệu ứng vòng sóng âm thanh
+       KillAnim— shake và flash khi giết
+       Colors  — toàn bộ màu sắc
+
+▸ Muốn thêm âm thanh mới?
+    → GameAudio.kt — thêm fun mới
+    → Tạo player tương ứng hoặc dùng SfxPlayer
+
+▸ Muốn hiểu dữ liệu truyền giữa các màn?
+    → GameSession.kt — dữ liệu chung (players, map, assignments)
+    → Intent extras  — dữ liệu riêng solo mode
+       ChooseNumberActivity.EXTRA_MAP
+       ChooseNumberActivity.EXTRA_SELECTED_NUMBER
+       ChooseNumberActivity.EXTRA_SHOWN_SPAWN_INDICES
+       ChooseNumberActivity.EXTRA_KILLER_ASSET_PATH
+
+
+----------------------------------------------------------------
+6. FLOW DỮ LIỆU QUAN TRỌNG
+----------------------------------------------------------------
+
+shownSpawnIndices
+  = danh sách index trong MapData.hiderSpawns được hiện lên map
+  = tối đa 10 (solo) hoặc số lượng player (multi)
+
+idxToDisplayNum
+  = Map<spawnIndex, displayNum>
+  = displayNum là số hiển thị trên màn hình (1, 2, 3...)
+  = ví dụ: spawnIndex 7 → hiện số "3" trên màn
+
+playerAssignments (trong GameSession)
+  = IntArray, index = playerIndex, value = displayNum
+  = ví dụ: [2, 5, 1, -1] → player 0 trốn ở số 2,
+                             player 1 ở số 5,
+                             player 3 chưa được gán
+
+Khi Killer giết displayNum X:
+  → KillerRunner gọi onKill(spawnIdx, displayNum=X)
+  → PlayingActivity: kiểm tra X == playerNumber → playerCaught = true
+  → PlayingMultiActivity: caughtDisplayNums.add(X) → hiện banner dead
+
+
+----------------------------------------------------------------
+7. NHỮNG CHỖ HAY CẦN SỬA
+----------------------------------------------------------------
+
+  Thêm map mới          → assets/Map/ + MapLoader.kt
+  Thêm loại phòng       → RoomType enum (MapData.kt) + thư mục âm thanh
+  Đổi số phòng tối đa   → GameSession / PlayingActivity (take 10/11)
+  Đổi UI dialog kết thúc→ dialog_end_game_*.xml
+  Đổi item danh sách    → item_survivor_multi.xml
+  Đổi hành vi pause     → setupPauseUi() trong Playing*Activity
+
+
+================================================================

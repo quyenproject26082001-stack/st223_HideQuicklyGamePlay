@@ -23,7 +23,6 @@
             app:layout_constraintWidth_percent="0.95"
             app:layout_constraintHeight_percent="0.975"
             android:layout_marginHorizontal="10dp"
-            tools:src="@drawable/template_1_preview"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

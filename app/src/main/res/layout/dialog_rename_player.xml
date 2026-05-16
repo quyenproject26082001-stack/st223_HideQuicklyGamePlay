@@ -9,7 +9,7 @@
         android:clipToOutline="false"
         android:clipToPadding="false"
         android:paddingTop="24dp"
-        android:background="#80000000">
+        >
 
         <FrameLayout
             android:layout_width="310dp"

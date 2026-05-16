@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 
 class ChooseKillerSetupDialog(
     context: Context,
+    private val currentKillerPath: String?,
     private val onSelect: (String) -> Unit
 ) : BaseDialog<DialogChooseKillerSetupBinding>(
     context,
@@ -36,19 +37,29 @@ class ChooseKillerSetupDialog(
             .map { KillerModel(name = it.substringBeforeLast("."), imageAssetPath = "killer_removebg/$it") }
 
         if (killerList.isNotEmpty()) {
-            val first = killerList[0]
-            selectedKillerPath = first.imageAssetPath
-            binding.tvKillerName.text = first.name
-            loadKillerPreview(first.imageAssetPath)
-        }
+            val initialSelectedPosition = killerList.indexOfFirst { item ->
+                item.imageAssetPath == currentKillerPath
+            }.takeIf { it >= 0 } ?: 0
 
-        val adapter = KillerAdapter(killerList.toMutableList()) { item ->
-            selectedKillerPath = item.imageAssetPath
-            binding.tvKillerName.text = item.name
-            loadKillerPreview(item.imageAssetPath)
+            val initialItem = killerList[initialSelectedPosition]
+            selectedKillerPath = initialItem.imageAssetPath
+            binding.tvKillerName.text = initialItem.name
+            loadKillerPreview(initialItem.imageAssetPath)
+
+            val adapter = KillerAdapter(
+                list = killerList.toMutableList(),
+                onItemClick = { item ->
+                    selectedKillerPath = item.imageAssetPath
+                    binding.tvKillerName.text = item.name
+                    loadKillerPreview(item.imageAssetPath)
+                },
+                initialSelectedPosition = initialSelectedPosition
+            )
+            binding.rvKiller.adapter = adapter
+            binding.rvKiller.scrollToPosition(initialSelectedPosition)
+            binding.viewKillerScrollIndicator.attachTo(binding.rvKiller)
+            return
         }
-        binding.rvKiller.adapter = adapter
-        binding.viewKillerScrollIndicator.attachTo(binding.rvKiller)
     }
 
     override fun initAction() {

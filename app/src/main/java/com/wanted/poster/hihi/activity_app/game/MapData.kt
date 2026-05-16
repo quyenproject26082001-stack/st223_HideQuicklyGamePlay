@@ -11,7 +11,11 @@ data class MapData(
     val doorLines: List<Pair<PointF, PointF>> = emptyList()
 )
 
-data class RoomInfo(val position: PointF, val type: RoomType)
+data class RoomInfo(
+    val position: PointF,
+    val type: RoomType,
+    val radius: Float
+)
 
 enum class RoomType(val folder: String) {
     BEDROOM ("sound_killer/room_bedroom"),

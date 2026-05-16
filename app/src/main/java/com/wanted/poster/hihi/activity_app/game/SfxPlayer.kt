@@ -5,11 +5,14 @@ import android.media.MediaPlayer
 
 object SfxPlayer {
 
-    private const val FOLDER_KILL   = "sound_killer/kill_sound"
-    private const val FOLDER_SCREAM = "sound_killer/scream_sound"
+    private const val FOLDER_KILL      = "sound_killer/kill_sound"
+    private const val FOLDER_SCREAM    = "sound_killer/scream_sound"
+    private const val FILE_EXPLOSION   = "sound_killer/explosion.wav"
 
-    private var killPlayer:   MediaPlayer? = null
-    private var screamPlayer: MediaPlayer? = null
+
+    private var killPlayer:      MediaPlayer? = null
+    private var screamPlayer:    MediaPlayer? = null
+    private var explosionPlayer: MediaPlayer? = null
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
@@ -21,13 +24,10 @@ object SfxPlayer {
             val afd = context.assets.openFd(file)
             killPlayer = MediaPlayer().apply {
                 setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                setOnCompletionListener {
-                    // post lên main thread sau khi kill player xong hẳn
-                    handler.post { playScream(context) }
-                }
                 prepare()
                 start()
             }
+            playScream(context)
         } catch (e: Exception) {
             android.util.Log.w("SfxPlayer", "Cannot play kill: $file")
         }
@@ -48,6 +48,20 @@ object SfxPlayer {
         }
     }
 
+    fun playExplosion(context: Context) {
+        explosionPlayer?.release(); explosionPlayer = null
+        try {
+            val afd = context.assets.openFd(FILE_EXPLOSION)
+            explosionPlayer = MediaPlayer().apply {
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("SfxPlayer", "Cannot play explosion: $e")
+        }
+    }
+
     private fun resolveFile(context: Context, folder: String, configured: String?): String? {
         if (configured != null) return "$folder/$configured"
         val files = context.assets.list(folder)
@@ -60,5 +74,6 @@ object SfxPlayer {
         handler.removeCallbacksAndMessages(null)
         killPlayer?.release(); killPlayer = null
         screamPlayer?.release(); screamPlayer = null
+        explosionPlayer?.release(); explosionPlayer = null
     }
 }

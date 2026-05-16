@@ -11,12 +11,15 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
+import com.wanted.poster.hihi.R
 
 class MaskedChooserImageView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    private enum class ScaleMode { CENTER_CROP, FIT_CENTER }
 
     private var gradientPath = Path()
     private var imagePath = Path()
@@ -26,6 +29,26 @@ class MaskedChooserImageView @JvmOverloads constructor(
     private val destRect = RectF()
 
     private var imageBitmap: Bitmap? = null
+    private var scaleMode = ScaleMode.CENTER_CROP
+
+    init {
+        context.obtainStyledAttributes(
+            attrs,
+            R.styleable.MaskedChooserImageView,
+            defStyleAttr,
+            0
+        ).use { typedArray ->
+            scaleMode = when (
+                typedArray.getInt(
+                    R.styleable.MaskedChooserImageView_chooserScaleType,
+                    0
+                )
+            ) {
+                1 -> ScaleMode.FIT_CENTER
+                else -> ScaleMode.CENTER_CROP
+            }
+        }
+    }
 
     fun setImageBitmap(bitmap: Bitmap?) {
         if (imageBitmap === bitmap) return
@@ -61,7 +84,16 @@ class MaskedChooserImageView @JvmOverloads constructor(
         canvas.clipPath(imagePath)
         val bitmapW = bitmap.width.toFloat()
         val bitmapH = bitmap.height.toFloat()
-        val scale = maxOf(imageBounds.width() / bitmapW, imageBounds.height() / bitmapH)
+        val scale = when (scaleMode) {
+            ScaleMode.CENTER_CROP -> maxOf(
+                imageBounds.width() / bitmapW,
+                imageBounds.height() / bitmapH
+            )
+            ScaleMode.FIT_CENTER -> minOf(
+                imageBounds.width() / bitmapW,
+                imageBounds.height() / bitmapH
+            )
+        }
         val drawW = bitmapW * scale
         val drawH = bitmapH * scale
         destRect.set(

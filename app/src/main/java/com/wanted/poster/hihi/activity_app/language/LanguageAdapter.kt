@@ -4,10 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.wanted.poster.hihi.R
 import com.wanted.poster.hihi.core.base.BaseAdapter
-import com.wanted.poster.hihi.core.extensions.gone
 import com.wanted.poster.hihi.core.extensions.loadImageGlide
 import com.wanted.poster.hihi.core.extensions.setOnSingleClick
-import com.wanted.poster.hihi.core.extensions.visible
 import com.wanted.poster.hihi.data.model.LanguageModel
 import com.wanted.poster.hihi.databinding.ItemLanguageBinding
 
@@ -23,10 +21,8 @@ class LanguageAdapter(val context: Context) : BaseAdapter<LanguageModel, ItemLan
             tvLang.text = item.name
 
             if (item.activate) {
-                //loadImageGlide(root, R.drawable.ic_tick_lang, btnRadio, false)
                 imvFocus.setBackgroundResource(R.drawable.frame_language_slt)
             } else {
-                //loadImageGlide(root, R.drawable.ic_not_tick_lang, btnRadio, false)
                 imvFocus.setBackgroundResource(R.drawable.frame_lang_uslt)
             }
 

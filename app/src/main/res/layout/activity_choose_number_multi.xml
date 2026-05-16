@@ -22,7 +22,6 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_parchment"
         android:paddingVertical="10dp"
         android:paddingHorizontal="12dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -52,7 +51,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:outerStrokeColor="@color/black"
             app:outerStrokeWidth="2dp"
-            android:text="Player 1" />
+            android:text="Player 1's turn" />
 
         <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
             android:id="@+id/tvTurnInstruction"
@@ -60,13 +59,15 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:fontFamily="@font/tradewinds_regular"
-            android:textColor="#DDDDDD"
-            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
             app:layout_constraintStart_toEndOf="@id/ivCurrentPlayerAvatar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvCurrentPlayerName"
             app:outerStrokeColor="@color/black"
-            app:outerStrokeWidth="1dp"
+            app:outerStrokeWidth="2dp"
+            android:shadowColor="#80000000"
+            android:shadowDy="6"
             android:text="@string/choose_your_spot" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -79,36 +80,57 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1"
+        android:layout_marginBottom="70dp"
         app:layout_constraintTop_toBottomOf="@id/layoutPlayerTurn"
-        app:layout_constraintBottom_toTopOf="@id/btnConfirm"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Confirm button -->
-    <FrameLayout
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
         android:id="@+id/btnConfirm"
-        android:layout_width="200dp"
-        android:layout_height="64dp"
-        android:layout_marginBottom="30dp"
+        android:layout_width="140dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:text="@string/confirm"
+        android:shadowDy="6"
+        android:gravity="center"
+        android:shadowColor="#80000000"
+        android:textColor="@color/white"
+        app:outerStrokeColor="@color/black"
+        app:outerStrokeWidth="2dp"
         android:background="@drawable/img_home_0"
-        android:alpha="0.5"
+        android:fontFamily="@font/tradewinds_regular"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:fontFamily="@font/tradewinds_regular"
-            android:text="@string/confirm_spot"
-            android:textColor="@color/white"
-            android:textSize="22sp"
-            android:shadowColor="#80000000"
-            android:shadowDy="6"
-            android:shadowRadius="0.01"
-            app:outerStrokeColor="@color/black"
-            app:outerStrokeWidth="2dp" />
-    </FrameLayout>
+    <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+        android:id="@+id/tvAllReady"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:text="All players ready! \nStarting game..."
+        android:fontFamily="@font/tradewinds_regular"
+        android:shadowDy="6"
+        android:shadowColor="#80FFFFFF"
+        android:textColor="@color/white"
+        app:outerStrokeColor="@color/black"
+        app:outerStrokeWidth="2dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textSize="16sp"/>
+
+
+
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

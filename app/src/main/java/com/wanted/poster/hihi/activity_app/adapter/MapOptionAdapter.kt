@@ -19,10 +19,15 @@ import kotlinx.coroutines.withContext
 class MapOptionAdapter(
     private val ctx: Context,
     private val items: List<MapOption>,
+    initialSelectedPosition: Int = 0,
     private val onSelected: (MapOption) -> Unit
 ) : RecyclerView.Adapter<MapOptionAdapter.MapViewHolder>() {
 
-    private var selectedPos = 0
+    private var selectedPos = if (items.isEmpty()) {
+        RecyclerView.NO_POSITION
+    } else {
+        initialSelectedPosition.coerceIn(0, items.lastIndex)
+    }
 
     private val bitmapCache = LruCache<Int, Bitmap>(20)
 
@@ -67,11 +72,13 @@ class MapOptionAdapter(
         holder.binding.imgSelected.visibility = if (isSelected) View.VISIBLE else View.GONE
 
         holder.itemView.setOnClickListener {
+            val currentPosition = holder.bindingAdapterPosition
+            if (currentPosition == RecyclerView.NO_POSITION) return@setOnClickListener
             val prev = selectedPos
-            selectedPos = holder.bindingAdapterPosition
-            notifyItemChanged(prev)
+            selectedPos = currentPosition
+            if (prev != RecyclerView.NO_POSITION) notifyItemChanged(prev)
             notifyItemChanged(selectedPos)
-            onSelected(opt)
+            onSelected(items[currentPosition])
         }
     }
 

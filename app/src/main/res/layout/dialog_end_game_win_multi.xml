@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000">
+
+        <!-- Bloom effect behind dialog -->
+        <FrameLayout
+            android:layout_width="419dp"
+            android:layout_height="279dp"
+            android:background="@drawable/ic_bloom"
+            android:layout_marginBottom="-150dp"
+            app:layout_constraintBottom_toTopOf="@id/dialogBody"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Dialog body -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/dialogBody"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="27dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="20dp"
+            android:background="@drawable/bg_dialog_endgame_single_win"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                android:id="@+id/tvSurvivors"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/result"
+                android:fontFamily="@font/tradewinds_regular"
+                android:textSize="18sp"
+                android:textStyle="italic"
+                android:textColor="@color/black"
+                android:shadowColor="#33000000"
+                android:shadowDy="2"
+                android:shadowRadius="0.1"
+                app:outerStrokeColor="@color/white"
+                app:outerStrokeWidth="1dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSurvivors"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginHorizontal="8dp"
+                android:maxHeight="300dp"
+                android:overScrollMode="ifContentScrolls"
+                tools:listitem="@layout/item_survivor_multi"
+                app:layout_constraintTop_toBottomOf="@id/tvSurvivors"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <FrameLayout
+                android:id="@+id/btnHome"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="30dp"
+                android:background="@drawable/ic_home"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/btnPlayAgain"
+                app:layout_constraintBottom_toBottomOf="@id/btnPlayAgain" />
+
+            <FrameLayout
+                android:id="@+id/btnPlayAgain"
+                android:layout_width="156dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="30dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/frame_btn"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rvSurvivors"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:fontFamily="@font/tradewinds_regular"
+                    android:text="@string/play_again"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:shadowColor="#80000000"
+                    android:shadowDy="6"
+                    android:shadowRadius="0.1"
+                    app:outerStrokeColor="@color/black"
+                    app:outerStrokeWidth="2dp" />
+            </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Title bar floating above dialog body -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="160dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="-20dp"
+            android:background="@drawable/bg_dialog_end_game_title_single_win"
+            app:layout_constraintBottom_toTopOf="@id/dialogBody"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:id="@+id/ic_cup"
+                android:layout_width="20dp"
+                android:layout_height="17dp"
+                android:src="@drawable/ic_cup"
+                android:scaleType="fitXY"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/tvTitle"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.wanted.poster.hihi.core.custom.text.DoubleStrokeTextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:fontFamily="@font/tradewinds_regular"
+                android:text="@string/result"
+                android:textColor="#01B401"
+                android:textSize="20sp"
+                android:shadowColor="#80000000"
+                android:shadowDy="6"
+                android:shadowRadius="0.1"
+                app:outerStrokeColor="@color/white"
+                app:outerStrokeWidth="2dp"
+                app:layout_constraintStart_toEndOf="@id/ic_cup"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHorizontal_chainStyle="packed" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

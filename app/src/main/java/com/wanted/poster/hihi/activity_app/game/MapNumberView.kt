@@ -9,37 +9,106 @@ import android.graphics.CornerPathEffect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
+import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MapNumberView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    private data class ThrowableAnim(
+        val toolType: ResistanceToolType,
+        val from: PointF,
+        val to: PointF,
+        val progress: Float,
+        val rotationDeg: Float
+    )
+
+    private data class DisplayMoveAnim(
+        val displayNum: Int,
+        val path: List<PointF>,
+        val progress: Float
+    )
+
     private object NumberUiConfig {
-        const val CHOOSE_BADGE_MIN_SIZE_DP = 28f // Kích thước cạnh vuông tối thiểu của ô số ở màn chooseNumber
-        const val CHOOSE_BADGE_PADDING_DP = 2f // Khoảng đệm bên trong quanh text để nền vuông to thêm
-        const val CHOOSE_BADGE_RADIUS_DP = 4f // Độ bo góc của nền vuông ở màn chooseNumber
-        const val CHOOSE_SELECTED_BORDER_WIDTH_DP = 1f // Độ dày viền khi ô số đang được chọn ở màn chooseNumber
 
-        const val NUMBER_TEXT_SIZE_SP = 25f // Cỡ chữ của số thứ tự
-        const val NUMBER_STROKE_WIDTH_DP = 2f // Độ dày viền đen bao quanh chữ
+        object Badge {
+            val MIN_SIZE_DP get() = GameConfig.SPAWN_BADGE_MIN_SIZE_DP
+            const val PADDING_DP = 2f
+            const val RADIUS_DP = 4f
+            const val SELECTED_BORDER_WIDTH_DP = 1f
+            const val TAKEN_BORDER_WIDTH_DP = 1f
+            const val AVATAR_CELL_RADIUS_DP = 5f
+            const val LOCK_ICON_SIZE_DP = 14f
+            const val DEAD_OVER_AVATAR_RATIO = 0.5f
+        }
 
-        const val SELECTED_MARKER_WIDTH_DP = 18f // Chiều rộng icon item_select_player
-        const val SELECTED_MARKER_HEIGHT_DP = 12f // Chiều cao icon item_select_player
-        const val SELECTED_MARKER_GAP_DP = 4f // Khoảng cách giữa item_select_player và text số
-        const val SELECTED_MARKER_OFFSET_X_DP = 0f // Tinh chỉnh item_select_player sang trái/phải
-        const val SELECTED_MARKER_OFFSET_Y_DP = 0f // Tinh chỉnh item_select_player lên/xuống
+        object Text {
+            const val SIZE_SP = 25f
+            const val STROKE_WIDTH_DP = 2f
+        }
 
-        const val DEAD_MARKER_SIZE_DP = 18f // Kích thước icon ic_dead đè lên trên số đã chết
+        object Marker {
+            const val SELECTED_WIDTH_DP = 18f
+            const val SELECTED_HEIGHT_DP = 12f
+            const val SELECTED_GAP_DP = 4f
+            const val SELECTED_OFFSET_X_DP = 0f
+            const val SELECTED_OFFSET_Y_DP = 0f
+            const val DEAD_SIZE_DP = 18f
+        }
+
+        object Avatar {
+            const val INNER_RATIO = 0.93f
+            const val TAP_RADIUS_RATIO = 1.8f
+        }
+
+        object Sound {
+            const val BG_RADIUS_RATIO = 0.85f
+            const val ICON_SIZE_RATIO = 1.1f
+            const val ICON_Y_OFFSET_RATIO = 0.38f
+            const val RING_STROKE_RATIO = 0.18f
+            const val RING_EXPAND_START = 0.9f
+            const val RING_EXPAND_RANGE = 2.2f
+            const val RING_ALPHA_FACTOR = 220
+        }
+
+        object KillAnim {
+            const val SHAKE_AMPLITUDE_RATIO = 0.03f
+            const val FLASH_INITIAL_ALPHA = 0.45f
+        }
+
+        object Colors {
+            val BG = Color.parseColor("#CC111111")
+            val ACCENT = Color.parseColor("#FFCC00")
+            val CHOOSE_NUMBER_BG = Color.parseColor("#D9D9D9")
+            val CHOOSE_SELECTED_BORDER = Color.parseColor("#B4D334")
+            val KILL_RED = Color.parseColor("#E53935")
+            val DEAD_BG = Color.parseColor("#99444444")
+            val DEAD_BORDER = Color.parseColor("#99888888")
+            val TRAIL = Color.parseColor("#CCFF3D00")
+            val SOUND_BG = Color.argb(210, 0xFF, 0x88, 0x00)
+            val CHOOSE_GRADIENT_TOP = Color.parseColor("#8ABABD")
+            val CHOOSE_GRADIENT_BOTTOM = Color.parseColor("#031210")
+            val DEAD_TEXT = Color.parseColor("#AAAAAA")
+            val SHADOW = Color.parseColor("#80000000")
+        }
     }
 
     enum class Phase { CHOOSE_NUMBER, PLAYING }
 
     var phase = Phase.CHOOSE_NUMBER
-        set(value) { field = value; invalidate() }
+        set(value) {
+            field = value
+            // Khi chuyển sang PLAYING, ẩn tất cả player (progress=0) cho đến khi
+            // animatePlayingSpawnsIntro được gọi — tránh flash vị trí cuối trước animation.
+            if (value == Phase.PLAYING) spawnIntroProgress = 0f
+            invalidate()
+        }
 
     var selectedNumber = -1
         private set
@@ -48,73 +117,92 @@ class MapNumberView @JvmOverloads constructor(
 
     private var mapBitmap: Bitmap? = null
     private var killerBitmap: Bitmap? = null
+    private var bombBitmap: Bitmap? = null
+    private var explosionBitmap: Bitmap? = null
     private var debugCollisionBitmap: Bitmap? = null
-    var showDebugCollision = false
+    var showDebugCollision = GameConfig.DEBUG_KILLER_COLLISION
     private val debugPaint = Paint().apply { alpha = 140 }
     private val mapRect = RectF()
 
-    // Vị trí số trên map 1 (normalized 0..1 so với map image)
-    private var numberPositions = defaultPositionsForMap1()
+    // Mutable vì player có thể đổi sang spawn khác sau khi phản kháng.
+    private var numberPositions: MutableMap<Int, PointF> = defaultPositionsForMap1().toMutableMap()
 
-    // Killer position — updated during animation
     private val killerPos = PointF(0.46f, 0.38f)
     private val killerSpawnDefault = PointF(0.46f, 0.38f)
     private var killerAnimator: ValueAnimator? = null
 
-    // Room number revealed by killer (shown in red after animation)
     var killerRevealedNumber = -1
 
-    // Trail path (normalized coords) drawn on map
     private var killerTrail: List<PointF> = emptyList()
 
-    // Rooms already visited/killed by killer → shown in gray
     val deadNumbers = mutableSetOf<Int>()
 
-    // Avatar bitmaps per displayNum (shown as circular avatar instead of number)
     private val spawnAvatarBitmaps: MutableMap<Int, Bitmap?> = mutableMapOf()
 
-    // Numbers that are taken and not selectable (for ChooseNumberMulti)
     var takenNumbers: Set<Int> = emptySet()
 
-    // Sound indicator — shown at room position while killer is heading there
     private var soundIndicatorPos: PointF? = null
     private var soundRingPhase = 0f
     private var soundRingAnimator: ValueAnimator? = null
 
-    // Kill animation — shake + red flash
+    private var spawnIntroProgress = 1f
+    private var spawnIntroAnimator: ValueAnimator? = null
+    // Path thực (qua KillerPathfinder) cho từng player khi chạy từ killerSpawn vào hideSpawn.
+    private var introEntrancePaths: Map<Int, List<PointF>> = emptyMap()
+    // Tổng thời gian animation mở màn (ms), được tính từ tốc độ + stagger + độ dài path mỗi player.
+    private var introTotalMs: Long = 0L
+    // Thời điểm player bắt đầu rời killerSpawn, tính theo tỉ lệ [0..1] của introTotalMs.
+    private var introPlayerStartFrac: Map<Int, Float> = emptyMap()
+    // Phần thời gian player di chuyển, tính theo tỉ lệ [0..1] của introTotalMs.
+    private var introPlayerTravelFrac: Map<Int, Float> = emptyMap()
+    private var throwableAnim: ThrowableAnim? = null
+    private var throwableAnimator: ValueAnimator? = null
+    private var displayMoveAnim: DisplayMoveAnim? = null
+    private var displayMoveAnimator: ValueAnimator? = null
+    private var killerStunPhase = 0f
+    private var killerStunActive = false
+    private var killerRecoilAnimator: ValueAnimator? = null
+    private var killerStunAnimator: ValueAnimator? = null
+
     private var killerShakeOffset = 0f
     private var flashAlpha = 0f
     private var shakeAnimator: ValueAnimator? = null
     private var flashAnimator: ValueAnimator? = null
 
+    private var explosionPos: PointF? = null
+    private var explosionAlpha = 0f
+    private var explosionScale = 1f
+    private var explosionAnimator: ValueAnimator? = null
+    private val explosionPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#CC111111")
+        color = NumberUiConfig.Colors.BG
     }
     private val selectedBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FFCC00")
+        color = NumberUiConfig.Colors.ACCENT
     }
     private val chooseNumberBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#D9D9D9")
+        color = NumberUiConfig.Colors.CHOOSE_NUMBER_BG
     }
     private val chooseNumberSelectedBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val chooseNumberSelectedBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#B4D334")
+        color = NumberUiConfig.Colors.CHOOSE_SELECTED_BORDER
         style = Paint.Style.STROKE
-        strokeWidth = dp(NumberUiConfig.CHOOSE_SELECTED_BORDER_WIDTH_DP)
+        strokeWidth = dp(NumberUiConfig.Badge.SELECTED_BORDER_WIDTH_DP)
     }
     private val killerRevealPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E53935")
+        color = NumberUiConfig.Colors.KILL_RED
     }
     private val deadBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#99444444")
+        color = NumberUiConfig.Colors.DEAD_BG
     }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FFCC00")
+        color = NumberUiConfig.Colors.ACCENT
         style = Paint.Style.STROKE
         strokeWidth = 4f
     }
     private val deadBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#99888888")
+        color = NumberUiConfig.Colors.DEAD_BORDER
         style = Paint.Style.STROKE
         strokeWidth = 3f
     }
@@ -126,10 +214,19 @@ class MapNumberView @JvmOverloads constructor(
         resources,
         com.wanted.poster.hihi.R.drawable.ic_dead
     )
+    private val lockBitmap = try {
+        BitmapFactory.decodeResource(resources, com.wanted.poster.hihi.R.drawable.ic_lock)
+    } catch (_: Exception) { null }
+    private val chooseTakenBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = dp(NumberUiConfig.Badge.TAKEN_BORDER_WIDTH_DP)
+    }
+    private val chooseTakenAvatarClipPath = Path()
     private val numberTypeface = ResourcesCompat.getFont(context, com.wanted.poster.hihi.R.font.tradewinds_regular)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        setShadowLayer(0.1f, 0f, 6f, Color.parseColor("#80000000"))
+        setShadowLayer(0.1f, 0f, 6f, NumberUiConfig.Colors.SHADOW)
         typeface = numberTypeface
     }
     private val numberStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -137,13 +234,13 @@ class MapNumberView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeMiter = 10f
-        strokeWidth = dp(NumberUiConfig.NUMBER_STROKE_WIDTH_DP)
+        strokeWidth = dp(NumberUiConfig.Text.STROKE_WIDTH_DP)
         color = Color.BLACK
-        setShadowLayer(0.1f, 0f, 6f, Color.parseColor("#80000000"))
+        setShadowLayer(0.1f, 0f, 6f, NumberUiConfig.Colors.SHADOW)
         typeface = numberTypeface
     }
     private val trailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#CCFF3D00")
+        color = NumberUiConfig.Colors.TRAIL
         style = Paint.Style.STROKE
         strokeWidth = 10f
         strokeJoin = Paint.Join.ROUND
@@ -155,14 +252,17 @@ class MapNumberView @JvmOverloads constructor(
     private val flashOverlayPaint = Paint().apply { color = Color.RED }
 
     private val avatarBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FFCC00")
+        color = NumberUiConfig.Colors.ACCENT
         style = Paint.Style.STROKE
         strokeWidth = 4f
     }
     private val avatarDeadBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#99888888")
+        color = NumberUiConfig.Colors.DEAD_BORDER
         style = Paint.Style.STROKE
         strokeWidth = 3f
+    }
+    private val avatarBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
     }
     private val avatarClipPath = Path()
 
@@ -170,7 +270,7 @@ class MapNumberView @JvmOverloads constructor(
         style = Paint.Style.STROKE
     }
     private val soundBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(210, 0xFF, 0x88, 0x00)
+        color = NumberUiConfig.Colors.SOUND_BG
     }
     private val soundIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -178,9 +278,26 @@ class MapNumberView @JvmOverloads constructor(
         isFakeBoldText = true
         setShadowLayer(3f, 0f, 1f, Color.BLACK)
     }
+    private val throwablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#E8DDD0")
+        style = Paint.Style.FILL
+    }
+    private val throwableAccentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#5D4037")
+        style = Paint.Style.STROKE
+        strokeWidth = dp(2f)
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val stunPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFD54F")
+        style = Paint.Style.FILL
+        setShadowLayer(5f, 0f, 0f, Color.parseColor("#66FFEE58"))
+    }
 
     init {
         loadAssets(1, null)
+        try { bombBitmap = context.assets.open("bomb/bomb.png").use { BitmapFactory.decodeStream(it) } } catch (_: Exception) {}
+        try { explosionBitmap = context.assets.open("bomb/explosion.png").use { BitmapFactory.decodeStream(it) } } catch (_: Exception) {}
     }
 
     fun animateKillerAlongPath(
@@ -221,7 +338,6 @@ class MapNumberView @JvmOverloads constructor(
         val timeBounds = FloatArray(segments + 1)
         for (i in 0 until segments) timeBounds[i + 1] = timeBounds[i] + weights[i] / total
 
-        // Track segment để fire door sound đúng lúc killer chạm door segment
         var prevSeg = -1
         var lastDoorFiredSeg = -1
 
@@ -258,25 +374,42 @@ class MapNumberView @JvmOverloads constructor(
 
     fun resetKillerPos() {
         killerAnimator?.cancel()
+        killerRecoilAnimator?.cancel()
+        killerStunAnimator?.cancel()
         killerPos.set(killerSpawnDefault.x, killerSpawnDefault.y)
+        killerStunActive = false
+        killerStunPhase = 0f
         killerRevealedNumber = -1
         invalidate()
     }
 
     fun cancelAnimation() {
         killerAnimator?.cancel()
+        killerRecoilAnimator?.cancel()
+        killerStunAnimator?.cancel()
+        throwableAnimator?.cancel()
+        displayMoveAnimator?.cancel()
+        explosionAnimator?.cancel()
     }
 
     fun pauseAnimation() {
         killerAnimator?.pause()
+        killerRecoilAnimator?.pause()
+        killerStunAnimator?.pause()
         soundRingAnimator?.pause()
+        throwableAnimator?.pause()
+        displayMoveAnimator?.pause()
         shakeAnimator?.pause()
         flashAnimator?.pause()
     }
 
     fun resumeAnimation() {
         killerAnimator?.resume()
+        killerRecoilAnimator?.resume()
+        killerStunAnimator?.resume()
         soundRingAnimator?.resume()
+        throwableAnimator?.resume()
+        displayMoveAnimator?.resume()
         shakeAnimator?.resume()
         flashAnimator?.resume()
     }
@@ -306,7 +439,7 @@ class MapNumberView @JvmOverloads constructor(
     fun animateKillShake(onComplete: () -> Unit) {
         shakeAnimator?.cancel()
         flashAnimator?.cancel()
-        val amplitude = mapRect.width() * 0.03f
+        val amplitude = mapRect.width() * NumberUiConfig.KillAnim.SHAKE_AMPLITUDE_RATIO
         shakeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 380L
             interpolator = LinearInterpolator()
@@ -318,7 +451,7 @@ class MapNumberView @JvmOverloads constructor(
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     killerShakeOffset = 0f
-                    flashAnimator = ValueAnimator.ofFloat(0.45f, 0f).apply {
+                    flashAnimator = ValueAnimator.ofFloat(NumberUiConfig.KillAnim.FLASH_INITIAL_ALPHA, 0f).apply {
                         duration = 250L
                         addUpdateListener {
                             flashAlpha = it.animatedValue as Float
@@ -354,12 +487,289 @@ class MapNumberView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun animatePlayingSpawnsIntro(onComplete: (() -> Unit)? = null) {
+        if (phase != Phase.PLAYING || numberPositions.isEmpty()) {
+            spawnIntroProgress = 1f
+            invalidate()
+            onComplete?.invoke()
+            return
+        }
+
+        val totalMs = if (introTotalMs > 0L) introTotalMs else {
+            val n = numberPositions.size
+            GameConfig.SPAWN_ENTRANCE_STAGGER_MS * (n - 1) + GameConfig.SPAWN_ENTRANCE_MIN_TRAVEL_MS
+        }
+
+        spawnIntroAnimator?.cancel()
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = totalMs
+        animator.interpolator = LinearInterpolator()
+        animator.addUpdateListener {
+            spawnIntroProgress = it.animatedValue as Float
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+                if (spawnIntroAnimator === animator) {
+                    spawnIntroAnimator = null
+                }
+                spawnIntroProgress = 1f
+                invalidate()
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (spawnIntroAnimator === animator) {
+                    spawnIntroAnimator = null
+                    spawnIntroProgress = 1f
+                    invalidate()
+                    onComplete?.invoke()
+                }
+            }
+        })
+        spawnIntroProgress = 0f
+        spawnIntroAnimator = animator
+        animator.start()
+    }
+
+    fun setIntroEntrancePaths(paths: Map<Int, List<PointF>>) {
+        introEntrancePaths = paths
+
+        val staggerMs = GameConfig.SPAWN_ENTRANCE_STAGGER_MS.toFloat()
+        val speed = GameConfig.SPAWN_ENTRANCE_SPEED
+        val minMs = GameConfig.SPAWN_ENTRANCE_MIN_TRAVEL_MS.toFloat()
+
+        val sortedNums = paths.keys.sorted()
+
+        // Tính thời gian di chuyển của mỗi player dựa vào độ dài path thực.
+        val travelMsMap: Map<Int, Float> = paths.mapValues { (_, path) ->
+            var len = 0f
+            for (i in 0 until path.lastIndex) {
+                val dx = path[i + 1].x - path[i].x
+                val dy = path[i + 1].y - path[i].y
+                len += sqrt(dx * dx + dy * dy)
+            }
+            (len / speed * 1000f).coerceAtLeast(minMs)
+        }
+
+        // Tổng animation = max(stagger_start + travel) trên tất cả player.
+        val totalMs = sortedNums.mapIndexed { i, num ->
+            i * staggerMs + (travelMsMap[num] ?: minMs)
+        }.maxOrNull()?.toLong()?.coerceAtLeast(minMs.toLong()) ?: minMs.toLong()
+
+        introTotalMs = totalMs
+        val totalF = totalMs.toFloat()
+
+        introPlayerStartFrac = sortedNums.mapIndexed { i, num ->
+            num to (i * staggerMs / totalF)
+        }.toMap()
+
+        introPlayerTravelFrac = travelMsMap.mapValues { (_, tMs) -> tMs / totalF }
+    }
+
+    fun currentDisplayPosition(displayNum: Int): PointF? {
+        val base = numberPositions[displayNum] ?: return null
+        val moving = displayMoveAnim
+        return if (moving?.displayNum == displayNum) {
+            pointOnPath(moving.path, moving.progress)
+        } else {
+            PointF(base.x, base.y)
+        }
+    }
+
+    // Đây chỉ là animation vật ném. Logic game quyết định phản kháng có thành công hay không;
+    // view chỉ chịu trách nhiệm vẽ đường ném từ player tới killer.
+    fun animateResistanceThrow(
+        from: PointF,
+        to: PointF,
+        toolType: ResistanceToolType,
+        onComplete: () -> Unit
+    ) {
+        throwableAnimator?.cancel()
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = GameConfig.PLAYER_RESISTANCE_THROW_DURATION_MS
+        animator.interpolator = LinearInterpolator()
+        animator.addUpdateListener {
+            val progress = it.animatedValue as Float
+            throwableAnim = ThrowableAnim(
+                toolType = toolType,
+                from = PointF(from.x, from.y),
+                to = PointF(to.x, to.y),
+                progress = progress,
+                rotationDeg = progress * 520f
+            )
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+                if (throwableAnimator === animator) throwableAnimator = null
+                throwableAnim = null
+                invalidate()
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (throwableAnimator === animator) throwableAnimator = null
+                throwableAnim = null
+                invalidate()
+                onComplete()
+            }
+        })
+        throwableAnimator = animator
+        animator.start()
+    }
+
+    // Recoil và choáng được xử lý ngay trong view này để sprite killer
+    // và hiệu ứng choáng luôn khớp với vị trí / trail hiện tại của killer.
+    fun animateKillerRecoilAndStun(
+        recoilTarget: PointF,
+        recoilDurationMs: Long = GameConfig.PLAYER_RESISTANCE_RECOIL_DURATION_MS,
+        stunDurationMs: Long = GameConfig.PLAYER_RESISTANCE_STUN_DURATION_MS,
+        onComplete: () -> Unit
+    ) {
+        killerRecoilAnimator?.cancel()
+        killerStunAnimator?.cancel()
+        killerStunActive = false
+        killerStunPhase = 0f
+
+        val from = PointF(killerPos.x, killerPos.y)
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = recoilDurationMs
+        animator.interpolator = DecelerateInterpolator()
+        animator.addUpdateListener {
+            val progress = it.animatedValue as Float
+            killerPos.x = from.x + (recoilTarget.x - from.x) * progress
+            killerPos.y = from.y + (recoilTarget.y - from.y) * progress
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+                if (killerRecoilAnimator === animator) killerRecoilAnimator = null
+                killerPos.set(recoilTarget.x, recoilTarget.y)
+                invalidate()
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (killerRecoilAnimator === animator) killerRecoilAnimator = null
+                killerPos.set(recoilTarget.x, recoilTarget.y)
+                startKillerStun(stunDurationMs, onComplete)
+            }
+        })
+        killerRecoilAnimator = animator
+        animator.start()
+    }
+
+    fun animateExplosion(killerPos: PointF, onComplete: () -> Unit) {
+        explosionAnimator?.cancel()
+        explosionPos = PointF(killerPos.x, killerPos.y)
+        explosionScale = 0.4f
+        explosionAlpha = 1f
+        invalidate()
+
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = GameConfig.BOMB_EXPLOSION_ANIMATION_DURATION_MS
+        animator.interpolator = DecelerateInterpolator()
+        animator.addUpdateListener {
+            val t = it.animatedValue as Float
+            explosionScale = 0.4f + t * 1.8f
+            explosionAlpha = 1f - t
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                if (explosionAnimator === animator) { explosionAnimator = null; explosionPos = null }
+                invalidate()
+                onComplete()
+            }
+            override fun onAnimationCancel(animation: Animator) {
+                if (explosionAnimator === animator) { explosionAnimator = null; explosionPos = null }
+                invalidate()
+            }
+        })
+        explosionAnimator = animator
+        animator.start()
+    }
+
+    // Di chuyển một display number dọc theo path, rồi chốt lại vị trí spawn mới.
+    fun animateDisplayRelocation(displayNum: Int, path: List<PointF>, onComplete: () -> Unit) {
+        if (path.size < 2) {
+            path.lastOrNull()?.let { numberPositions[displayNum] = PointF(it.x, it.y) }
+            invalidate()
+            onComplete()
+            return
+        }
+
+        displayMoveAnimator?.cancel()
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = GameConfig.PLAYER_RESISTANCE_RELOCATE_DURATION_MS
+        animator.interpolator = DecelerateInterpolator()
+        animator.addUpdateListener {
+            displayMoveAnim = DisplayMoveAnim(displayNum, path, it.animatedValue as Float)
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+                if (displayMoveAnimator === animator) displayMoveAnimator = null
+                displayMoveAnim = null
+                invalidate()
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (displayMoveAnimator === animator) displayMoveAnimator = null
+                val finalPos = path.last()
+                numberPositions[displayNum] = PointF(finalPos.x, finalPos.y)
+                displayMoveAnim = null
+                invalidate()
+                onComplete()
+            }
+        })
+        displayMoveAnimator = animator
+        animator.start()
+    }
+
+    private fun startKillerStun(stunDurationMs: Long = GameConfig.PLAYER_RESISTANCE_STUN_DURATION_MS, onComplete: () -> Unit) {
+        killerStunActive = true
+        killerStunPhase = 0f
+        val animator = ValueAnimator.ofFloat(0f, 1f)
+        animator.duration = stunDurationMs
+        animator.interpolator = LinearInterpolator()
+        animator.addUpdateListener {
+            killerStunPhase = (it.animatedValue as Float) * 2f
+            invalidate()
+        }
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+                if (killerStunAnimator === animator) killerStunAnimator = null
+                killerStunActive = false
+                killerStunPhase = 0f
+                invalidate()
+            }
+
+            override fun onAnimationEnd(animation: Animator) {
+                if (killerStunAnimator === animator) killerStunAnimator = null
+                killerStunActive = false
+                killerStunPhase = 0f
+                invalidate()
+                onComplete()
+            }
+        })
+        killerStunAnimator = animator
+        animator.start()
+    }
+
     fun clearSpawnAvatars() {
         spawnAvatarBitmaps.clear()
         invalidate()
     }
 
     fun clearGameState() {
+        spawnIntroAnimator?.cancel()
+        spawnIntroAnimator = null
+        spawnIntroProgress = 1f
+        throwableAnimator?.cancel()
+        throwableAnimator = null
+        throwableAnim = null
+        displayMoveAnimator?.cancel()
+        displayMoveAnimator = null
+        displayMoveAnim = null
         killerTrail = emptyList()
         deadNumbers.clear()
         killerRevealedNumber = -1
@@ -394,9 +804,9 @@ class MapNumberView @JvmOverloads constructor(
         killerSpawnDefault.set(spawn.x, spawn.y)
         killerPos.set(spawn.x, spawn.y)
         numberPositions = if (hiderSpawns.isNotEmpty())
-            hiderSpawns.mapIndexed { i, p -> (i + 1) to p }.toMap()
+            hiderSpawns.mapIndexed { i, p -> (i + 1) to PointF(p.x, p.y) }.toMap().toMutableMap()
         else
-            defaultPositionsForMap1()
+            defaultPositionsForMap1().mapValues { (_, p) -> PointF(p.x, p.y) }.toMutableMap()
         if (width > 0) computeMapRect(width, height)
         invalidate()
     }
@@ -423,7 +833,7 @@ class MapNumberView @JvmOverloads constructor(
         }
     }
 
-    private fun radius() = mapRect.width() * 0.055f
+    private fun radius() = mapRect.width() * GameConfig.SPAWN_AVATAR_SIZE_RATIO
 
     private fun dp(value: Float) = value * resources.displayMetrics.density
     private fun sp(value: Float) = value * resources.displayMetrics.scaledDensity
@@ -431,16 +841,96 @@ class MapNumberView @JvmOverloads constructor(
     private fun nx(p: PointF) = mapRect.left + p.x * mapRect.width()
     private fun ny(p: PointF) = mapRect.top + p.y * mapRect.height()
 
+    // Lấy ra một điểm chuẩn hóa tại progress bất kỳ trên một polyline path.
+    private fun pointOnPath(path: List<PointF>, progress: Float): PointF {
+        if (path.isEmpty()) return PointF()
+        if (path.size == 1) return PointF(path[0].x, path[0].y)
+
+        val clamped = progress.coerceIn(0f, 1f)
+        if (clamped <= 0f) return PointF(path.first().x, path.first().y)
+        if (clamped >= 1f) return PointF(path.last().x, path.last().y)
+
+        var totalLength = 0f
+        val segmentLengths = FloatArray(path.size - 1)
+        for (i in segmentLengths.indices) {
+            val dx = path[i + 1].x - path[i].x
+            val dy = path[i + 1].y - path[i].y
+            val length = sqrt(dx * dx + dy * dy)
+            segmentLengths[i] = length
+            totalLength += length
+        }
+
+        if (totalLength <= 0f) return PointF(path.last().x, path.last().y)
+
+        var remaining = totalLength * clamped
+        for (i in segmentLengths.indices) {
+            val length = segmentLengths[i]
+            if (remaining <= length || i == segmentLengths.lastIndex) {
+                val local = if (length <= 0f) 1f else (remaining / length).coerceIn(0f, 1f)
+                val from = path[i]
+                val to = path[i + 1]
+                return PointF(
+                    from.x + (to.x - from.x) * local,
+                    from.y + (to.y - from.y) * local
+                )
+            }
+            remaining -= length
+        }
+
+        return PointF(path.last().x, path.last().y)
+    }
+
+    // Tiến trình cục bộ của player num trong animation mở màn (0=chưa rời killerSpawn, 1=đã đến hideSpawn).
+    private fun spawnIntroLocalProgress(num: Int): Float {
+        if (spawnIntroProgress >= 1f) return 1f
+        val startFrac = introPlayerStartFrac[num] ?: 0f
+        val travelFrac = (introPlayerTravelFrac[num] ?: 1f).coerceAtLeast(0.001f)
+        return ((spawnIntroProgress - startFrac) / travelFrac).coerceIn(0f, 1f)
+    }
+
+    // Alpha trong suốt animation mở màn: player mờ dần từ 0 lên 1 trong 20% đầu hành trình.
+    private fun spawnIntroAlpha(num: Int): Float {
+        if (phase != Phase.PLAYING || spawnIntroProgress >= 1f) return 1f
+        return (spawnIntroLocalProgress(num) / 0.20f).coerceIn(0f, 1f)
+    }
+
+    // Vị trí hiển thị là kết hợp của vị trí spawn hiện tại (sau khi phản kháng chạy chỗ)
+    // và animation mở màn (tất cả player xuất phát từ killerSpawn, tỏa về hideSpawn).
+    private fun animatedDisplayPosition(num: Int, target: PointF): PointF {
+        val movedTarget = if (displayMoveAnim?.displayNum == num) {
+            pointOnPath(displayMoveAnim!!.path, displayMoveAnim!!.progress)
+        } else {
+            target
+        }
+
+        if (phase != Phase.PLAYING || spawnIntroProgress >= 1f) return movedTarget
+
+        val localProgress = spawnIntroLocalProgress(num)
+        if (localProgress >= 1f) return movedTarget
+
+        // Ease-out: giảm tốc khi gần đến nơi
+        val eased = 1f - (1f - localProgress) * (1f - localProgress)
+
+        val path = introEntrancePaths[num]
+        return if (path != null && path.size >= 2) {
+            pointOnPath(path, eased)
+        } else {
+            // Fallback đường thẳng nếu path chưa được tính (hiếm).
+            PointF(
+                killerSpawnDefault.x + (movedTarget.x - killerSpawnDefault.x) * eased,
+                killerSpawnDefault.y + (movedTarget.y - killerSpawnDefault.y) * eased
+            )
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
         mapBitmap?.let { canvas.drawBitmap(it, null, mapRect, null) }
 
-        // Debug: collision overlay chồng lên map
         if (showDebugCollision) {
             debugCollisionBitmap?.let { canvas.drawBitmap(it, null, mapRect, debugPaint) }
         }
 
-        // Draw killer trail
-        if (killerTrail.size >= 2) {
+        if (GameConfig.SHOW_KILLER_TRAIL && killerTrail.size >= 2) {
             trailAndroidPath.reset()
             trailAndroidPath.moveTo(nx(killerTrail[0]), ny(killerTrail[0]))
             for (i in 1 until killerTrail.size) {
@@ -454,27 +944,40 @@ class MapNumberView @JvmOverloads constructor(
         soundIndicatorPos?.let { drawSoundIndicator(canvas, it) }
 
         val isChoosePhase = phase == Phase.CHOOSE_NUMBER
-        val badgeRadius = dp(NumberUiConfig.CHOOSE_BADGE_RADIUS_DP)
-        textPaint.textSize = sp(NumberUiConfig.NUMBER_TEXT_SIZE_SP)
+        val badgeRadius = dp(NumberUiConfig.Badge.RADIUS_DP)
+        textPaint.textSize = sp(NumberUiConfig.Text.SIZE_SP)
         numberStrokePaint.textSize = textPaint.textSize
-        val selectedMarkerWidth = dp(NumberUiConfig.SELECTED_MARKER_WIDTH_DP)
-        val selectedMarkerHeight = dp(NumberUiConfig.SELECTED_MARKER_HEIGHT_DP)
-        val selectedMarkerGap = dp(NumberUiConfig.SELECTED_MARKER_GAP_DP)
-        val selectedMarkerOffsetX = dp(NumberUiConfig.SELECTED_MARKER_OFFSET_X_DP)
-        val selectedMarkerOffsetY = dp(NumberUiConfig.SELECTED_MARKER_OFFSET_Y_DP)
-        val deadMarkerSize = dp(NumberUiConfig.DEAD_MARKER_SIZE_DP)
-        val chooseBadgeMinSize = dp(NumberUiConfig.CHOOSE_BADGE_MIN_SIZE_DP)
-        val chooseBadgePadding = dp(NumberUiConfig.CHOOSE_BADGE_PADDING_DP)
+        val selectedMarkerWidth  = dp(NumberUiConfig.Marker.SELECTED_WIDTH_DP)
+        val selectedMarkerHeight = dp(NumberUiConfig.Marker.SELECTED_HEIGHT_DP)
+        val selectedMarkerGap    = dp(NumberUiConfig.Marker.SELECTED_GAP_DP)
+        val selectedMarkerOffsetX = dp(NumberUiConfig.Marker.SELECTED_OFFSET_X_DP)
+        val selectedMarkerOffsetY = dp(NumberUiConfig.Marker.SELECTED_OFFSET_Y_DP)
+        val deadMarkerSize    = dp(NumberUiConfig.Marker.DEAD_SIZE_DP)
+        val chooseBadgeMinSize = dp(NumberUiConfig.Badge.MIN_SIZE_DP)
+        val chooseBadgePadding = dp(NumberUiConfig.Badge.PADDING_DP)
+        val avatarCellRadius   = dp(NumberUiConfig.Badge.AVATAR_CELL_RADIUS_DP)
         val textBounds = Rect()
 
-        numberPositions.forEach { (num, pos) ->
-            val cx = nx(pos)
-            val cy = ny(pos)
+        // Trong animation mở màn: vẽ theo thứ tự N→1 để player số 1 nằm trên cùng (rời đi trước).
+        val isIntroActive = phase == Phase.PLAYING && spawnIntroProgress < 1f
+        val drawEntries = if (isIntroActive)
+            numberPositions.entries.sortedByDescending { it.key }
+        else
+            numberPositions.entries.sortedBy { it.key }
+
+        drawEntries.forEach { (num, pos) ->
+            val animatedPos = animatedDisplayPosition(num, pos)
+            val introAlpha = if (isIntroActive) spawnIntroAlpha(num) else 1f
+            val hasAlphaLayer = introAlpha < 1f
+            if (hasAlphaLayer) canvas.saveLayerAlpha(0f, 0f, width.toFloat(), height.toFloat(), (introAlpha * 255).toInt())
+            val cx = nx(animatedPos)
+            val cy = ny(animatedPos)
             val isLatestKill = num == killerRevealedNumber
             val isDead = deadNumbers.contains(num)
             val isPlayerChoice = num == selectedNumber
             val label = num.toString()
-            val badgeSize = if (isChoosePhase) {
+            val avatarBitmapPeek = spawnAvatarBitmaps[num]
+            val badgeSize = if (isChoosePhase || avatarBitmapPeek != null) {
                 val textHeight = textPaint.fontMetrics.run { bottom - top }
                 maxOf(
                     chooseBadgeMinSize,
@@ -484,20 +987,42 @@ class MapNumberView @JvmOverloads constructor(
             } else {
                 0f
             }
-            val badgeWidth = badgeSize
-            val badgeHeight = badgeSize
-            val left = cx - badgeWidth / 2f
-            val top = cy - badgeHeight / 2f
-            val right = cx + badgeWidth / 2f
-            val bottom = cy + badgeHeight / 2f
+            val left   = cx - badgeSize / 2f
+            val top    = cy - badgeSize / 2f
+            val right  = cx + badgeSize / 2f
+            val bottom = cy + badgeSize / 2f
 
-            val avatarBitmap = spawnAvatarBitmaps[num]
-            if (avatarBitmap != null) {
-                // Draw circular avatar instead of number
-                val r = radius()
-                drawSpawnAvatar(canvas, cx, cy, r, avatarBitmap, isDead)
-                if (!isChoosePhase && isDead && deadMarkerBitmap != null) {
-                    val sz = r * 0.65f
+            val avatarBitmap = avatarBitmapPeek
+
+            if (isChoosePhase && takenNumbers.contains(num)) {
+                if (avatarBitmap != null) {
+                    chooseTakenAvatarClipPath.reset()
+                    chooseTakenAvatarClipPath.addRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, Path.Direction.CW)
+                    canvas.save()
+                    canvas.clipPath(chooseTakenAvatarClipPath)
+                    canvas.drawBitmap(avatarBitmap, null, RectF(left, top, right, bottom), null)
+                    canvas.restore()
+                } else {
+                    canvas.drawRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, chooseNumberBgPaint)
+                }
+                canvas.drawRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, chooseTakenBorderPaint)
+                lockBitmap?.let {
+                    val lockSize = dp(NumberUiConfig.Badge.LOCK_ICON_SIZE_DP)
+                    val lLeft = right - lockSize / 2f
+                    val lTop = top - lockSize / 2f
+                    canvas.drawBitmap(it, null, RectF(lLeft, lTop, lLeft + lockSize, lTop + lockSize), null)
+                }
+            } else if (!isChoosePhase && avatarBitmap != null) {
+                chooseTakenAvatarClipPath.reset()
+                chooseTakenAvatarClipPath.addRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, Path.Direction.CW)
+                canvas.save()
+                canvas.clipPath(chooseTakenAvatarClipPath)
+                canvas.drawRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, avatarBgPaint)
+                canvas.drawBitmap(avatarBitmap, null, RectF(left, top, right, bottom), null)
+                canvas.restore()
+                canvas.drawRoundRect(left, top, right, bottom, avatarCellRadius, avatarCellRadius, chooseTakenBorderPaint)
+                if (isDead && deadMarkerBitmap != null) {
+                    val sz = badgeSize * NumberUiConfig.Badge.DEAD_OVER_AVATAR_RATIO
                     canvas.drawBitmap(deadMarkerBitmap, null, RectF(cx - sz/2, cy - sz/2, cx + sz/2, cy + sz/2), null)
                 }
             } else {
@@ -506,8 +1031,8 @@ class MapNumberView @JvmOverloads constructor(
                     if (isPlayerChoice) {
                         chooseNumberSelectedBgPaint.shader = LinearGradient(
                             cx, top, cx, bottom,
-                            Color.parseColor("#8ABABD"),
-                            Color.parseColor("#031210"),
+                            NumberUiConfig.Colors.CHOOSE_GRADIENT_TOP,
+                            NumberUiConfig.Colors.CHOOSE_GRADIENT_BOTTOM,
                             Shader.TileMode.CLAMP
                         )
                     } else {
@@ -520,11 +1045,10 @@ class MapNumberView @JvmOverloads constructor(
                 }
 
                 textPaint.color = when {
-                    isChoosePhase && takenNumbers.contains(num) -> Color.parseColor("#88888888")
                     isChoosePhase -> Color.WHITE
-                    isLatestKill -> Color.parseColor("#E53935")
-                    isDead -> Color.parseColor("#AAAAAA")
-                    else -> Color.WHITE
+                    isLatestKill  -> NumberUiConfig.Colors.KILL_RED
+                    isDead        -> NumberUiConfig.Colors.DEAD_TEXT
+                    else          -> Color.WHITE
                 }
                 val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2f
                 canvas.drawText(label, cx, textY, numberStrokePaint)
@@ -549,9 +1073,17 @@ class MapNumberView @JvmOverloads constructor(
                     canvas.drawBitmap(deadMarkerBitmap, null, RectF(cx - deadHalf, cy - deadHalf, cx + deadHalf, cy + deadHalf), null)
                 }
             }
+            if (hasAlphaLayer) canvas.restore()
         }
 
-        // Red flash overlay on kill
+        if (killerStunActive) {
+            drawKillerStun(canvas)
+        }
+
+        throwableAnim?.let { drawThrowable(canvas, it) }
+
+        if (explosionPos != null) drawExplosion(canvas)
+
         if (flashAlpha > 0f) {
             flashOverlayPaint.alpha = (flashAlpha * 255).toInt()
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), flashOverlayPaint)
@@ -562,11 +1094,12 @@ class MapNumberView @JvmOverloads constructor(
         val bgPaintToUse = if (isDead) deadBgPaint else bgPaint
         canvas.drawCircle(cx, cy, r, bgPaintToUse)
 
+        val innerR = r * NumberUiConfig.Avatar.INNER_RATIO
         canvas.save()
         avatarClipPath.reset()
-        avatarClipPath.addCircle(cx, cy, r * 0.93f, Path.Direction.CW)
+        avatarClipPath.addCircle(cx, cy, innerR, Path.Direction.CW)
         canvas.clipPath(avatarClipPath)
-        canvas.drawBitmap(bitmap, null, RectF(cx - r * 0.93f, cy - r * 0.93f, cx + r * 0.93f, cy + r * 0.93f), null)
+        canvas.drawBitmap(bitmap, null, RectF(cx - innerR, cy - innerR, cx + innerR, cy + innerR), null)
         canvas.restore()
 
         val borderPaintToUse = if (isDead) avatarDeadBorderPaint else avatarBorderPaint
@@ -578,41 +1111,114 @@ class MapNumberView @JvmOverloads constructor(
         val cy = ny(pos)
         val r = radius()
 
-        // 3 staggered expanding rings
         for (i in 0 until 3) {
             val phase = (soundRingPhase + i / 3f) % 1f
-            val ringR = r * (0.9f + phase * 2.2f)
-            val alpha = ((1f - phase) * 220).toInt()
+            val ringR = r * (NumberUiConfig.Sound.RING_EXPAND_START + phase * NumberUiConfig.Sound.RING_EXPAND_RANGE)
+            val alpha = ((1f - phase) * NumberUiConfig.Sound.RING_ALPHA_FACTOR).toInt()
             soundRingPaint.color = Color.argb(alpha, 0xFF, 0x99, 0x00)
-            soundRingPaint.strokeWidth = r * 0.18f
+            soundRingPaint.strokeWidth = r * NumberUiConfig.Sound.RING_STROKE_RATIO
             canvas.drawCircle(cx, cy, ringR, soundRingPaint)
         }
 
-        // Background circle
-        canvas.drawCircle(cx, cy, r * 0.85f, soundBgPaint)
+        canvas.drawCircle(cx, cy, r * NumberUiConfig.Sound.BG_RADIUS_RATIO, soundBgPaint)
 
-        // Music note icon
-        soundIconPaint.textSize = r * 1.1f
-        canvas.drawText("♪", cx, cy + r * 0.38f, soundIconPaint)
+        soundIconPaint.textSize = r * NumberUiConfig.Sound.ICON_SIZE_RATIO
+        canvas.drawText("♪", cx, cy + r * NumberUiConfig.Sound.ICON_Y_OFFSET_RATIO, soundIconPaint)
     }
 
     private fun drawKiller(canvas: Canvas) {
         val bmp = killerBitmap ?: return
-        val kw = mapRect.width() * 0.15f
+        val kw = mapRect.width() * GameConfig.KILLER_SIZE_RATIO
         val kh = kw * bmp.height.toFloat() / bmp.width
         val cx = nx(killerPos) + killerShakeOffset
         val cy = ny(killerPos)
         canvas.drawBitmap(bmp, null, RectF(cx - kw / 2, cy - kh / 2, cx + kw / 2, cy + kh / 2), null)
     }
 
+    private fun drawKillerStun(canvas: Canvas) {
+        val cx = nx(killerPos) + killerShakeOffset
+        val cy = ny(killerPos) - mapRect.width() * 0.08f
+        val orbit = mapRect.width() * 0.035f
+        val dotRadius = mapRect.width() * 0.009f
+        repeat(3) { index ->
+            val phase = killerStunPhase + index / 3f
+            val angle = phase * Math.PI * 2.0
+            val x = cx + (cos(angle) * orbit).toFloat()
+            val y = cy + (sin(angle) * orbit * 0.45f).toFloat()
+            canvas.drawCircle(x, y, dotRadius, stunPaint)
+        }
+    }
+
+    private fun drawThrowable(canvas: Canvas, anim: ThrowableAnim) {
+        val current = PointF(
+            anim.from.x + (anim.to.x - anim.from.x) * anim.progress,
+            anim.from.y + (anim.to.y - anim.from.y) * anim.progress
+        )
+        val cx = nx(current)
+        val cy = ny(current)
+        val size = mapRect.width() * GameConfig.PLAYER_RESISTANCE_THROWABLE_SIZE_RATIO
+
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.rotate(anim.rotationDeg)
+        when (anim.toolType) {
+            ResistanceToolType.PAN -> {
+                canvas.drawOval(RectF(-size * 0.35f, -size * 0.30f, size * 0.35f, size * 0.30f), throwablePaint)
+                canvas.drawOval(RectF(-size * 0.35f, -size * 0.30f, size * 0.35f, size * 0.30f), throwableAccentPaint)
+                canvas.drawLine(size * 0.25f, 0f, size * 0.70f, 0f, throwableAccentPaint)
+            }
+
+            ResistanceToolType.BOWL -> {
+                val bowlRect = RectF(-size * 0.40f, -size * 0.18f, size * 0.40f, size * 0.28f)
+                canvas.drawArc(bowlRect, 0f, 180f, true, throwablePaint)
+                canvas.drawArc(bowlRect, 0f, 180f, false, throwableAccentPaint)
+            }
+
+            ResistanceToolType.CHOPSTICKS -> {
+                canvas.drawLine(-size * 0.55f, -size * 0.12f, size * 0.55f, -size * 0.28f, throwableAccentPaint)
+                canvas.drawLine(-size * 0.50f, size * 0.18f, size * 0.60f, 0f, throwableAccentPaint)
+            }
+
+            ResistanceToolType.BOTTLE -> {
+                val bodyRect = RectF(-size * 0.22f, -size * 0.42f, size * 0.22f, size * 0.36f)
+                canvas.drawRoundRect(bodyRect, size * 0.12f, size * 0.12f, throwablePaint)
+                canvas.drawRoundRect(bodyRect, size * 0.12f, size * 0.12f, throwableAccentPaint)
+                canvas.drawRect(-size * 0.10f, -size * 0.56f, size * 0.10f, -size * 0.38f, throwablePaint)
+                canvas.drawRect(-size * 0.10f, -size * 0.56f, size * 0.10f, -size * 0.38f, throwableAccentPaint)
+            }
+
+            ResistanceToolType.BOMB -> {
+                val bmp = bombBitmap
+                if (bmp != null) {
+                    val half = size * 0.45f
+                    canvas.drawBitmap(bmp, null, RectF(-half, -half, half, half), null)
+                } else {
+                    canvas.drawCircle(0f, 0f, size * 0.32f, throwablePaint)
+                    canvas.drawCircle(0f, 0f, size * 0.32f, throwableAccentPaint)
+                }
+            }
+        }
+        canvas.restore()
+    }
+
+    private fun drawExplosion(canvas: Canvas) {
+        val pos = explosionPos ?: return
+        val bmp = explosionBitmap ?: return
+        val cx = nx(pos)
+        val cy = ny(pos)
+        val size = mapRect.width() * 0.5f * explosionScale
+        explosionPaint.alpha = (explosionAlpha * 255).toInt().coerceIn(0, 255)
+        canvas.drawBitmap(bmp, null, RectF(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2), explosionPaint)
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (phase != Phase.CHOOSE_NUMBER || event.action != MotionEvent.ACTION_DOWN) return false
-        val tapRadius = radius() * 1.8f
+        val tapRadius = radius() * NumberUiConfig.Avatar.TAP_RADIUS_RATIO
         numberPositions.forEach { (num, pos) ->
             val dx = event.x - nx(pos)
             val dy = event.y - ny(pos)
             if (dx * dx + dy * dy <= tapRadius * tapRadius) {
-                if (takenNumbers.contains(num)) return true // already taken, ignore tap
+                if (takenNumbers.contains(num)) return true
                 selectedNumber = num
                 onNumberSelected?.invoke(num)
                 invalidate()

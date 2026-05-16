@@ -62,4 +62,11 @@
             <enum name="overlay" value="2" />
         </attr>
     </declare-styleable>
+
+    <declare-styleable name="MaskedChooserImageView">
+        <attr name="chooserScaleType">
+            <enum name="centerCrop" value="0" />
+            <enum name="fitCenter" value="1" />
+        </attr>
+    </declare-styleable>
 </resources>

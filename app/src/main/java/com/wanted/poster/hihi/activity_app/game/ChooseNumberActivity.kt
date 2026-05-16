@@ -31,7 +31,7 @@ class ChooseNumberActivity : AppCompatActivity() {
 
         val mapData = MapLoader.load(this, mapIndex)
         val allSpawns = mapData.hiderSpawns
-        shownSpawnIndices = (0 until allSpawns.size).shuffled().take(minOf(10, allSpawns.size)).toIntArray()
+        shownSpawnIndices = GameConfig.selectSpawnIndices(allSpawns, minOf(10, allSpawns.size)).toIntArray()
         val shownSpawns = shownSpawnIndices.map { allSpawns[it] }
 
         binding.mapNumberView.loadAssets(mapIndex, killerAssetPath, shownSpawns, mapData.killerSpawn)

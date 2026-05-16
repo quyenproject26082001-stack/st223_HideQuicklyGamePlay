@@ -18,10 +18,15 @@ import kotlinx.coroutines.withContext
 
 class KillerAdapter(
     private val list: MutableList<KillerModel>,
+    initialSelectedPosition: Int = 0,
     private val onItemClick: (KillerModel) -> Unit
 ) : RecyclerView.Adapter<KillerAdapter.KillerViewHolder>() {
 
-    private var selectedPosition = 0
+    private var selectedPosition = if (list.isEmpty()) {
+        RecyclerView.NO_POSITION
+    } else {
+        initialSelectedPosition.coerceIn(0, list.lastIndex)
+    }
     private val bitmapCache = LruCache<String, Bitmap>(30)
 
     inner class KillerViewHolder(private val binding: ItemKillerBinding) : RecyclerView.ViewHolder(binding.root) {

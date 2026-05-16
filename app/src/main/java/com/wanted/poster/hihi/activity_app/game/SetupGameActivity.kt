@@ -102,14 +102,14 @@ class SetupGameActivity : AppCompatActivity() {
 
     private fun setupClicks() {
         binding.btnChooseMap.setOnSingleClick {
-            ChooseMapSetupDialog(this) { mapOption ->
+            ChooseMapSetupDialog(this, selectedMapOption) { mapOption ->
                 selectedMapOption = mapOption
                 updateMapHexagon(mapOption)
             }.show()
         }
 
         binding.btnChooseKiller.setOnSingleClick {
-            ChooseKillerSetupDialog(this) { killerPath ->
+            ChooseKillerSetupDialog(this, selectedKillerPath) { killerPath ->
                 selectedKillerPath = killerPath
                 updateKillerHexagon(killerPath)
             }.show()
